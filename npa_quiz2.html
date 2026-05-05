@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INPA MCQ Quiz - Network Protocols & Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #222; }
+
+  /* TOP NAV BAR - always visible */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: #1a237e; color: white;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  #topbar h1 { font-size: 1rem; font-weight: 700; }
+  #topbar-right { display: flex; gap: 10px; align-items: center; }
+  #progress-bar-wrap { width: 150px; background: rgba(255,255,255,0.3); border-radius: 10px; height: 10px; }
+  #progress-bar { height: 10px; background: #4fc3f7; border-radius: 10px; width: 0%; transition: width 0.3s; }
+  #progress-text { font-size: 0.8rem; white-space: nowrap; }
+  .nav-btn {
+    background: #4fc3f7; color: #1a237e; border: none; padding: 6px 14px;
+    border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: #81d4fa; }
+  .nav-btn.danger { background: #ef5350; color: white; }
+  .nav-btn.danger:hover { background: #e53935; }
+
+  /* MAIN CONTENT */
+  #main { margin-top: 60px; padding: 20px; max-width: 900px; margin-left: auto; margin-right: auto; }
+
+  /* QUIZ SECTION */
+  #quiz-section { margin-top: 70px; }
+  .question-card {
+    background: white; border-radius: 12px; padding: 22px 26px;
+    margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 5px solid #1a237e;
+    transition: border-color 0.3s;
+  }
+  .question-card.correct-card { border-left-color: #43a047; }
+  .question-card.wrong-card { border-left-color: #e53935; }
+  .q-number { font-size: 0.78rem; color: #888; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+  .q-text { font-size: 1rem; font-weight: 600; margin-bottom: 14px; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option-btn {
+    background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px;
+    padding: 10px 16px; text-align: left; cursor: pointer; font-size: 0.93rem;
+    transition: all 0.2s; display: flex; align-items: center; gap: 10px;
+  }
+  .option-btn:hover:not(:disabled) { background: #e3f2fd; border-color: #1a237e; }
+  .option-btn.selected-correct { background: #e8f5e9; border-color: #43a047; color: #2e7d32; font-weight: 600; }
+  .option-btn.selected-wrong { background: #ffebee; border-color: #e53935; color: #c62828; font-weight: 600; }
+  .option-btn.reveal-correct { background: #e8f5e9; border-color: #43a047; color: #2e7d32; font-weight: 600; }
+  .option-btn:disabled { cursor: default; }
+  .option-icon { font-size: 1.1rem; }
+  .explanation {
+    margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+    font-size: 0.88rem; line-height: 1.6; display: none;
+  }
+  .explanation.show { display: block; }
+  .explanation.correct-exp { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #43a047; }
+  .explanation.wrong-exp { background: #ffebee; color: #c62828; border-left: 4px solid #e53935; }
+
+  /* SUBMIT BUTTON */
+  #submit-area { text-align: center; margin: 30px 0; }
+  #submit-btn {
+    background: #1a237e; color: white; border: none; padding: 14px 40px;
+    border-radius: 30px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(26,35,126,0.3); transition: all 0.2s;
+  }
+  #submit-btn:hover { background: #283593; transform: translateY(-2px); }
+
+  /* RESULTS SECTION */
+  #results-section { display: none; margin-top: 70px; padding-bottom: 40px; }
+  .results-header {
+    background: linear-gradient(135deg, #1a237e, #283593);
+    color: white; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 24px;
+  }
+  .score-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); border: 4px solid white;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin: 16px auto;
+  }
+  .score-big { font-size: 2.2rem; font-weight: 900; }
+  .score-label { font-size: 0.8rem; opacity: 0.85; }
+  .results-header h2 { font-size: 1.5rem; margin-bottom: 8px; }
+  .stats-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .stat-box {
+    background: rgba(255,255,255,0.15); border-radius: 10px;
+    padding: 12px 20px; text-align: center; min-width: 100px;
+  }
+  .stat-num { font-size: 1.6rem; font-weight: 800; }
+  .stat-lbl { font-size: 0.75rem; opacity: 0.85; }
+
+  /* TOPIC ANALYSIS */
+  .topic-analysis { background: white; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .topic-analysis h3 { font-size: 1.1rem; color: #1a237e; margin-bottom: 16px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
+  .topic-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .topic-name { flex: 1; font-size: 0.88rem; font-weight: 600; }
+  .topic-bar-wrap { flex: 2; background: #f0f4f8; border-radius: 6px; height: 14px; }
+  .topic-bar { height: 14px; border-radius: 6px; transition: width 0.5s; }
+  .topic-pct { font-size: 0.82rem; font-weight: 700; min-width: 40px; text-align: right; }
+
+  /* NEEDS IMPROVEMENT */
+  .needs-work { background: #fff8e1; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .needs-work h3 { color: #e65100; margin-bottom: 14px; font-size: 1.1rem; }
+  .wrong-item { background: white; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #ef5350; }
+  .wrong-item .wi-q { font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; }
+  .wrong-item .wi-ans { font-size: 0.82rem; color: #555; }
+  .wi-correct { color: #2e7d32; font-weight: 600; }
+  .wi-wrong { color: #c62828; }
+
+  /* DETAIL REVIEW */
+  .detail-review { background: white; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .detail-review h3 { color: #1a237e; margin-bottom: 14px; font-size: 1.1rem; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
+  .review-item { padding: 12px 0; border-bottom: 1px solid #f0f4f8; }
+  .review-item:last-child { border-bottom: none; }
+  .ri-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .ri-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+  .ri-q { font-size: 0.9rem; font-weight: 600; flex: 1; }
+  .ri-detail { font-size: 0.82rem; color: #555; padding-left: 30px; }
+  .ri-skipped { color: #f57c00; font-style: italic; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    #topbar h1 { font-size: 0.8rem; }
+    #progress-bar-wrap { width: 80px; }
+    .question-card { padding: 16px; }
+    .stats-row { gap: 8px; }
+    .stat-box { padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- FIXED TOP BAR -->
+<div id="topbar">
+  <h1>&#127760; INPA Quiz</h1>
+  <div id="topbar-right">
+    <div>
+      <div id="progress-text">0 / 63 answered</div>
+      <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    </div>
+    <button class="nav-btn" onclick="scrollToTop()">&#8679; Top</button>
+    <button class="nav-btn danger" onclick="submitQuiz()">Submit</button>
+  </div>
+</div>
+
+<!-- QUIZ SECTION -->
+<div id="quiz-section">
+  <div style="max-width:900px;margin:0 auto;padding:20px;">
+    <div style="background:linear-gradient(135deg,#1a237e,#3949ab);color:white;border-radius:16px;padding:28px;margin-bottom:28px;text-align:center;">
+      <h1 style="font-size:1.6rem;margin-bottom:8px;">&#127760; INPA – Network Protocols &amp; Architecture</h1>
+      <p style="opacity:0.85;font-size:0.95rem;">Lecture 2 · 63 Multiple Choice Questions</p>
+      <p style="opacity:0.7;font-size:0.82rem;margin-top:6px;">Click an answer to see instant feedback · Submit anytime</p>
+    </div>
+    <div id="questions-container"></div>
+    <div id="submit-area">
+      <button id="submit-btn" onclick="submitQuiz()">&#9989; Submit &amp; See Results</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS SECTION -->
+<div id="results-section">
+  <div style="max-width:900px;margin:0 auto;padding:20px;">
+    <div class="results-header">
+      <h2>&#127942; Quiz Results</h2>
+      <div class="score-circle">
+        <span class="score-big" id="res-pct">0%</span>
+        <span class="score-label">Score</span>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="res-correct">0</div><div class="stat-lbl">&#9989; Correct</div></div>
+        <div class="stat-box"><div class="stat-num" id="res-wrong">0</div><div class="stat-lbl">&#10060; Wrong</div></div>
+        <div class="stat-box"><div class="stat-num" id="res-skipped">0</div><div class="stat-lbl">&#9898; Skipped</div></div>
+        <div class="stat-box"><div class="stat-num" id="res-total">63</div><div class="stat-lbl">Total</div></div>
+      </div>
+      <p id="res-message" style="margin-top:16px;font-size:1rem;opacity:0.9;"></p>
+    </div>
+
+    <div class="topic-analysis">
+      <h3>&#128202; Performance by Topic</h3>
+      <div id="topic-bars"></div>
+    </div>
+
+    <div class="needs-work" id="needs-work-section">
+      <h3>&#128161; Areas to Improve</h3>
+      <div id="needs-work-list"></div>
+    </div>
+
+    <div class="detail-review">
+      <h3>&#128203; Detailed Review</h3>
+      <div id="detail-list"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <button class="nav-btn" style="padding:12px 30px;font-size:1rem;" onclick="retakeQuiz()">&#128260; Retake Quiz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  // ── TOPIC 1: IP ADDRESS BASICS ──
+  {
+    topic: "IP Address Basics",
+    q: "How many bits does an IPv4 address consist of?",
+    opts: ["16 bits", "32 bits", "64 bits", "128 bits"],
+    ans: 1,
+    exp: "IPv4 addresses are 32 bits (4 bytes/octets) long, e.g. 163.1.125.98."
+  },
+  {
+    topic: "IP Address Basics",
+    q: "Which organisation centrally controls the allocation of IPv4 addresses?",
+    opts: ["IEEE", "IETF", "ICANN", "ISO"],
+    ans: 2,
+    exp: "ICANN (Internet Corporation for Assigned Names and Numbers) is the non-profit body that governs IPv4 address allocation."
+  },
+  {
+    topic: "IP Address Basics",
+    q: "What is the theoretical maximum number of IPv4 addresses?",
+    opts: ["About 2 billion", "About 4 billion", "About 8 billion", "About 16 billion"],
+    ans: 1,
+    exp: "2^32 = 4,294,967,296 ≈ 4 billion addresses."
+  },
+  {
+    topic: "IP Address Basics",
+    q: "IPv6 addresses are how many bits long?",
+    opts: ["64 bits", "96 bits", "128 bits", "256 bits"],
+    ans: 2,
+    exp: "IPv6 uses 128-bit (16 bytes/octets) addresses to overcome IPv4 exhaustion."
+  },
+  {
+    topic: "IP Address Basics",
+    q: "Which of the following is a valid IPv4 address?",
+    opts: ["163.1.125.98", "163.1.125.98.10", "163:1:125:98", "163/1/125/98"],
+    ans: 0,
+    exp: "IPv4 addresses use dotted-decimal notation with 4 octets separated by dots."
+  },
+
+  // ── TOPIC 2: CLASSFUL ADDRESSING ──
+  {
+    topic: "Classful Addressing",
+    q: "An IP address whose first octet is 120 belongs to which class?",
+    opts: ["Class A", "Class B", "Class C", "Class D"],
+    ans: 0,
+    exp: "Class A covers first-octet values 0–127, so 120 is Class A."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "An IP address whose first octet is 155 belongs to which class?",
+    opts: ["Class A", "Class B", "Class C", "Class D"],
+    ans: 1,
+    exp: "Class B covers first-octet values 128–191, so 155 is Class B."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "An IP address whose first octet is 220 belongs to which class?",
+    opts: ["Class A", "Class B", "Class C", "Class D"],
+    ans: 2,
+    exp: "Class C covers first-octet values 192–223, so 220 is Class C."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "Class D addresses (224–239) are used for which purpose?",
+    opts: ["Unicast large networks", "Multicasting", "Loopback testing", "Experimental research"],
+    ans: 1,
+    exp: "Class D addresses are reserved for multicasting; devices subscribe to multicast groups rather than being assigned individual IPs."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "Class E addresses (240–255) are reserved for which purpose?",
+    opts: ["Large enterprise networks", "Multicasting", "Experimental/research", "Private LANs"],
+    ans: 2,
+    exp: "Class E addresses are reserved for testing and research; most systems will not route Class E traffic unless specifically configured."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "In classful addressing, the dividing line between network and host bits occurs at which boundary?",
+    opts: ["Bit boundary", "Nibble boundary", "Octet boundary", "Half-octet boundary"],
+    ans: 2,
+    exp: "Classful addressing divides network and host portions only at octet boundaries."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "How many octets are used for the Host ID in a Class A address?",
+    opts: ["1", "2", "3", "4"],
+    ans: 2,
+    exp: "Class A uses 1 octet for the Network ID and 3 octets for the Host ID."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "How many octets are used for the Network ID in a Class B address?",
+    opts: ["1", "2", "3", "4"],
+    ans: 1,
+    exp: "Class B uses 2 octets for the Network ID and 2 octets for the Host ID."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "What is the significant (leading) bit pattern for Class A addresses?",
+    opts: ["0", "10", "110", "1110"],
+    ans: 0,
+    exp: "Class A addresses always start with the bit '0' in the first octet."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "What is the significant (leading) bit pattern for Class C addresses?",
+    opts: ["0", "10", "110", "1110"],
+    ans: 2,
+    exp: "Class C addresses always start with '110' in the first octet."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "How many usable hosts per network does a Class C address support?",
+    opts: ["256", "254", "255", "128"],
+    ans: 1,
+    exp: "Class C has 8 host bits → 2^8 = 256, minus network and broadcast = 254 usable hosts."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "How many Class A networks can exist (excluding the significant bit)?",
+    opts: ["64", "126", "128", "254"],
+    ans: 1,
+    exp: "Class A uses 7 bits for the network part → 2^7 = 128, but all-zeros and all-ones are excluded → 126 usable networks."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "How many Class B networks can there be?",
+    opts: ["128", "8192", "16382", "65534"],
+    ans: 2,
+    exp: "Class B uses 14 bits for the network part → 2^14 = 16384, minus 2 = 16382 usable networks."
+  },
+  {
+    topic: "Classful Addressing",
+    q: "The formula 2^n - 2 is used to calculate which quantity?",
+    opts: ["Number of network classes", "Number of usable host addresses", "Number of subnet masks", "Number of routing table entries"],
+    ans: 1,
+    exp: "2^n - 2 gives usable hosts because the first address (network) and last address (broadcast) are reserved."
+  },
+
+  // ── TOPIC 3: SPECIAL ADDRESSES ──
+  {
+    topic: "Special Addresses",
+    q: "What does the address 0.0.0.0 represent in Cisco terminology?",
+    opts: ["Loopback address", "Broadcast to local network", "Default route", "Multicast group"],
+    ans: 2,
+    exp: "0.0.0.0 is the default Cisco route (all-zeros network and host parts)."
+  },
+  {
+    topic: "Special Addresses",
+    q: "What is the purpose of the address 255.255.255.255?",
+    opts: ["Loopback testing", "Broadcast to the local network", "Default gateway", "Experimental"],
+    ans: 1,
+    exp: "255.255.255.255 (all 1s) is a limited broadcast to the local network."
+  },
+  {
+    topic: "Special Addresses",
+    q: "Which address range is used for loopback testing?",
+    opts: ["0.0.0.0/8", "10.0.0.0/8", "127.0.0.0/8", "192.168.0.0/16"],
+    ans: 2,
+    exp: "Addresses starting with 127 (e.g. 127.0.0.1) are reserved for loopback testing."
+  },
+  {
+    topic: "Special Addresses",
+    q: "Which of the following is a private Class A address range?",
+    opts: ["172.16.0.0 – 172.31.255.255", "192.168.0.0 – 192.168.255.255", "10.0.0.0 – 10.255.255.255", "127.0.0.0 – 127.255.255.255"],
+    ans: 2,
+    exp: "The private Class A range is 10.0.0.0 – 10.255.255.255."
+  },
+  {
+    topic: "Special Addresses",
+    q: "Which of the following is the private Class B address range?",
+    opts: ["10.0.0.0 – 10.255.255.255", "172.16.0.0 – 172.31.255.255", "192.168.0.0 – 192.168.255.255", "169.254.0.0 – 169.254.255.255"],
+    ans: 1,
+    exp: "The private Class B range is 172.16.0.0 – 172.31.255.255."
+  },
+  {
+    topic: "Special Addresses",
+    q: "Which of the following is the private Class C address range?",
+    opts: ["172.16.0.0 – 172.31.255.255", "10.0.0.0 – 10.255.255.255", "192.168.0.0 – 192.168.255.255", "100.64.0.0 – 100.127.255.255"],
+    ans: 2,
+    exp: "The private Class C range is 192.168.0.0 – 192.168.255.255."
+  },
+
+  // ── TOPIC 4: SUBNET MASK ──
+  {
+    topic: "Subnet Mask",
+    q: "What is the default subnet mask for a Class A address?",
+    opts: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.128"],
+    ans: 0,
+    exp: "Class A default subnet mask is 255.0.0.0 (/8)."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "What is the default subnet mask for a Class B address?",
+    opts: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.128"],
+    ans: 1,
+    exp: "Class B default subnet mask is 255.255.0.0 (/16)."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "What is the default subnet mask for a Class C address?",
+    opts: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.128"],
+    ans: 2,
+    exp: "Class C default subnet mask is 255.255.255.0 (/24)."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "Which Boolean operation is applied between an IP address and its subnet mask to extract the Network ID?",
+    opts: ["OR", "XOR", "AND", "NOT"],
+    ans: 2,
+    exp: "The AND operation between the IP address and subnet mask yields the Network ID."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "Applying the Class C subnet mask to 206.175.162.21 gives which Network ID?",
+    opts: ["206.175.162.21", "206.175.162.0", "206.175.0.0", "206.0.0.0"],
+    ans: 1,
+    exp: "206.175.162.21 AND 255.255.255.0 = 206.175.162.0."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "What does VLSM stand for?",
+    opts: ["Virtual LAN Subnet Mask", "Variable Length Subnet Mask", "Virtual Layer Subnet Model", "Verified Local Subnet Map"],
+    ans: 1,
+    exp: "VLSM = Variable Length Subnet Mask, allowing bits to be borrowed from the host or network portion for more efficient allocation."
+  },
+  {
+    topic: "Subnet Mask",
+    q: "The subnet mask 255.255.255.128 in CIDR notation is written as:",
+    opts: ["/24", "/25", "/26", "/27"],
+    ans: 1,
+    exp: "255.255.255.128 has 25 consecutive 1-bits → /25."
+  },
+
+  // ── TOPIC 5: SUBNETTING & CIDR ──
+  {
+    topic: "Subnetting & CIDR",
+    q: "What does CIDR stand for?",
+    opts: ["Classless Inter-Domain Routing", "Class-based Internet Domain Routing", "Centralised IP Domain Routing", "Classful Internet Data Routing"],
+    ans: 0,
+    exp: "CIDR = Classless Inter-Domain Routing; it eliminates the class concept and uses prefix notation like /25."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "In subnetting, what is the minimum number of bits that must remain for the Host ID?",
+    opts: ["1 bit", "2 bits", "3 bits", "4 bits"],
+    ans: 1,
+    exp: "At least 2 bits must remain for the Host ID, allowing a minimum of 3 host addresses (but only 2 usable after subtracting network and broadcast)."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "Which of the following is NOT a benefit of subnetting?",
+    opts: ["Reduces routing table size", "Improves available bandwidth", "Increases the number of broadcast domains", "Hides internal routing flapping from outside routers"],
+    ans: 2,
+    exp: "Subnetting actually creates more (smaller) broadcast domains, which reduces broadcast traffic — it does not increase broadcast domains as a problem."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "When subnetting a Class C address into variable-length subnets, you should:",
+    opts: ["Start with the smallest subnet first", "Start with the largest subnet first", "Assign subnets alphabetically", "Use only /30 subnets"],
+    ans: 1,
+    exp: "Always start with the largest subnet first (e.g. /26 before /27, /29) to avoid address overlap."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "The network 140.25.0.0/16 needs subnets supporting up to 60 hosts with room for expansion. Which extended-network-prefix is chosen?",
+    opts: ["/24", "/25", "/26", "/27"],
+    ans: 1,
+    exp: "2^6=64 is not enough for expansion; 2^7=128 host addresses (7 host bits → /25) provides room for growth."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "For the network 140.25.0.0/25, how many usable host addresses are there per subnet?",
+    opts: ["126", "125", "128", "127"],
+    ans: 1,
+    exp: "7 host bits → 2^7 = 128 total, minus network address and broadcast = 126 total minus default gateway = 125 usable hosts."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "How many total /25 subnets can be created from 140.25.0.0/16?",
+    opts: ["128", "256", "512", "1024"],
+    ans: 2,
+    exp: "9 bits are borrowed from the host part → 2^9 = 512 total subnets."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "For Exercise 5, Room A needs 100 hosts. Which subnet is assigned?",
+    opts: ["165.132.9.0/24", "165.132.9.0/25", "165.132.9.0/26", "165.132.9.0/27"],
+    ans: 1,
+    exp: "100 hosts + network + broadcast + gateway = 103 ≤ 128 = 2^7 → /25 (255.255.255.128)."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "For Exercise 5, Room B needs 25 hosts. Which subnet is assigned (after correcting the overlap)?",
+    opts: ["165.132.9.128/27", "165.132.9.192/27", "165.132.9.160/27", "165.132.9.128/26"],
+    ans: 1,
+    exp: "After placing Room C&D at 165.132.9.128/26, Room B is assigned 165.132.9.192/27."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "For Exercise 5, Rooms C & D together need 50 hosts. Which subnet is assigned (correct version)?",
+    opts: ["165.132.9.128/26", "165.132.9.160/26", "165.132.9.192/26", "165.132.9.128/27"],
+    ans: 0,
+    exp: "50 hosts → 53 total ≤ 64 = 2^6 → /26. Starting after Room A (/25 ends at .127), Room C&D gets 165.132.9.128/26."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "What subnet mask corresponds to /26?",
+    opts: ["255.255.255.128", "255.255.255.192", "255.255.255.224", "255.255.255.240"],
+    ans: 1,
+    exp: "26 bits of 1s → last octet = 11000000 = 192 → 255.255.255.192."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "What subnet mask corresponds to /27?",
+    opts: ["255.255.255.128", "255.255.255.192", "255.255.255.224", "255.255.255.240"],
+    ans: 2,
+    exp: "27 bits of 1s → last octet = 11100000 = 224 → 255.255.255.224."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "The subnet 165.132.9.0/25 has which broadcast address?",
+    opts: ["165.132.9.126", "165.132.9.127", "165.132.9.128", "165.132.9.255"],
+    ans: 1,
+    exp: "The /25 block covers .0–.127; the broadcast is the last address: 165.132.9.127."
+  },
+  {
+    topic: "Subnetting & CIDR",
+    q: "In classless (subnet) addressing, the address structure is a 3-tier system. Which of the following correctly lists those three tiers?",
+    opts: ["NID + SID + HID", "MAC + IP + Port", "Class + Network + Host", "Octet1 + Octet2 + Octet3"],
+    ans: 0,
+    exp: "Classless addressing uses Network ID (NID) + Subnet ID (SID) + Host ID (HID)."
+  },
+
+  // ── TOPIC 6: ROUTING ──
+  {
+    topic: "Routing",
+    q: "What does a non-router device (host) do when the destination IP address is not on its local network?",
+    opts: ["Drops the packet", "Broadcasts to all networks", "Sends the packet to its default gateway", "Sends an ARP request to the destination"],
+    ans: 2,
+    exp: "Non-router devices send all non-local traffic to a single local router called the default gateway."
+  },
+  {
+    topic: "Routing",
+    q: "In the routing table from Exercise 5, what does a Metric value indicate?",
+    opts: ["The IP address of the destination", "The associated cost/efficiency of the route (lower = preferred)", "The number of hops to the destination", "The subnet mask length"],
+    ans: 1,
+    exp: "Metric indicates the associated cost (efficiency) of the route; lower metric values are more preferred."
+  },
+  {
+    topic: "Routing",
+    q: "A default route in a routing table has which subnet mask?",
+    opts: ["255.255.255.255", "255.0.0.0", "0.0.0.0", "255.255.0.0"],
+    ans: 2,
+    exp: "A default route uses subnet mask 0.0.0.0 (all 32 bits are 0), making it an 'all-pass' mask that matches any destination."
+  },
+  {
+    topic: "Routing",
+    q: "When a router receives a packet, in what order does it check the routing table?",
+    opts: ["Last row first", "Most specific route first", "Sequentially from the first row downward", "Randomly"],
+    ans: 2,
+    exp: "The router checks the routing table sequentially from the first row downward until a match is found."
+  },
+  {
+    topic: "Routing",
+    q: "Which command is used to verify IP address connectivity at the Network Layer?",
+    opts: ["Telnet", "Traceroute", "PING (ICMP)", "ARP"],
+    ans: 2,
+    exp: "PING uses ICMP to verify connectivity at the Network Layer."
+  },
+  {
+    topic: "Routing",
+    q: "Which command verifies network IP address connections up to the Application Layer?",
+    opts: ["PING", "Traceroute", "ARP", "Telnet"],
+    ans: 3,
+    exp: "Telnet is used to verify network IP address connections to the Application Layer."
+  },
+  {
+    topic: "Routing",
+    q: "What does a '*' response in a Traceroute output mean?",
+    opts: ["Network unreachable", "Port unreachable", "Timed out", "Router forwarded the packet"],
+    ans: 2,
+    exp: "A '*' in traceroute output indicates the probe packet timed out."
+  },
+  {
+    topic: "Routing",
+    q: "What does '!H' mean in a Traceroute response?",
+    opts: ["Host unreachable", "Router received packet but did not forward it (usually due to an access list)", "Network unreachable", "Protocol unreachable"],
+    ans: 1,
+    exp: "'!H' means the router received the packet but did not forward it, usually due to an access list."
+  },
+  {
+    topic: "Routing",
+    q: "Route aggregation (summarisation) in subnetting helps to:",
+    opts: ["Increase routing table size", "Reduce routing table size", "Eliminate the need for subnet masks", "Assign static IP addresses"],
+    ans: 1,
+    exp: "Route aggregation summarises multiple subnets into a single advertisement, reducing routing table size."
+  },
+
+  // ── TOPIC 7: ARP ──
+  {
+    topic: "ARP",
+    q: "What does ARP stand for?",
+    opts: ["Address Resolution Protocol", "Automatic Routing Protocol", "Address Registration Process", "Application Relay Protocol"],
+    ans: 0,
+    exp: "ARP = Address Resolution Protocol, used to map IP addresses to MAC addresses."
+  },
+  {
+    topic: "ARP",
+    q: "ARP resolves which type of address from which?",
+    opts: ["IP address from MAC address", "MAC address from IP address", "Port number from IP address", "Domain name from IP address"],
+    ans: 1,
+    exp: "ARP resolves a physical (MAC) address from a logical (IP) address."
+  },
+  {
+    topic: "ARP",
+    q: "When Host A sends an ARP request, what destination MAC address is used?",
+    opts: ["The target host MAC address", "The router MAC address", "FF:FF:FF:FF:FF:FF (broadcast)", "00:00:00:00:00:00"],
+    ans: 2,
+    exp: "ARP requests are sent as broadcasts using the destination MAC FF:FF:FF:FF:FF:FF so all hosts on the LAN receive them."
+  },
+  {
+    topic: "ARP",
+    q: "Which device maintains a Forwarding Table for MAC-IP bindings?",
+    opts: ["Router", "Switch", "End-host", "Firewall"],
+    ans: 1,
+    exp: "Switches maintain a Forwarding Table; routers maintain a MAC Table; end-hosts maintain an ARP cache."
+  },
+  {
+    topic: "ARP",
+    q: "Which device maintains an ARP cache?",
+    opts: ["Switch", "Router", "End-device/host", "Hub"],
+    ans: 2,
+    exp: "End-devices (hosts) maintain an ARP cache storing MAC-IP bindings."
+  },
+  {
+    topic: "ARP",
+    q: "A dynamic ARP entry differs from a static ARP entry in that dynamic entries are:",
+    opts: ["Manually configured with no duration limit", "Temporarily stored depending on the OS", "Never deleted", "Encrypted"],
+    ans: 1,
+    exp: "Dynamic ARP entries are automatically learned and temporarily stored; static entries are manually configured with no duration limit."
+  },
+  {
+    topic: "ARP",
+    q: "Which CLI command is used on a PC to view its ARP cache?",
+    opts: ["show arp", "arp -a", "ipconfig /arp", "netstat -arp"],
+    ans: 1,
+    exp: "The command 'arp -a' displays the ARP cache on a PC (Windows/Linux)."
+  },
+  {
+    topic: "ARP",
+    q: "ARP allows hosts on the same LAN to communicate without passing through the gateway because:",
+    opts: ["The gateway is too slow", "The destination MAC is already present in the ARP cache", "ARP encrypts the traffic", "The switch blocks gateway traffic"],
+    ans: 1,
+    exp: "Once the destination MAC is cached via ARP, frames can be sent directly on the LAN without involving the gateway."
+  },
+
+  // ── TOPIC 8: OSI / TCP-IP MODEL ──
+  {
+    topic: "OSI / TCP-IP Model",
+    q: "At which layer of the TCP/IP model does IP operate?",
+    opts: ["Network Access layer", "Internet layer", "Transport layer", "Application layer"],
+    ans: 1,
+    exp: "IP operates at the Internet layer (equivalent to the OSI Network layer)."
+  },
+  {
+    topic: "OSI / TCP-IP Model",
+    q: "What is the PDU (Protocol Data Unit) at the TCP/IP Transport layer for TCP?",
+    opts: ["Frame", "Packet", "Segment", "Datagram"],
+    ans: 2,
+    exp: "TCP uses Segments as its PDU at the Transport layer."
+  },
+  {
+    topic: "OSI / TCP-IP Model",
+    q: "What addressing is used at the Data Link (Network Access) layer?",
+    opts: ["IP address", "Port number", "MAC address", "Domain name"],
+    ans: 2,
+    exp: "The Data Link / Network Access layer uses MAC addresses (source and destination)."
+  },
+  {
+    topic: "OSI / TCP-IP Model",
+    q: "Which standard defines the OSI 7-layer model?",
+    opts: ["IEEE 802.3", "RFC 791", "ITU-T X.200 (ISO/IEC 7498-1)", "RFC 2460"],
+    ans: 2,
+    exp: "The OSI model is defined by ITU-T standard X.200 (ISO/IEC 7498-1)."
+  },
+  {
+    topic: "OSI / TCP-IP Model",
+    q: "The TCP/IP (DoD) model is currently maintained by which organisation?",
+    opts: ["ISO", "ITU-T", "IETF", "ICANN"],
+    ans: 2,
+    exp: "The DoD/TCP-IP model is currently maintained by the IETF (Internet Engineering Task Force)."
+  },
+
+  // ── TOPIC 9: CISCO CONFIG ──
+  {
+    topic: "Cisco Configuration",
+    q: "Which Cisco IOS command assigns IP address 192.168.1.1/24 to FastEthernet 0/0?",
+    opts: [
+      "ip address 192.168.1.1 255.255.255.0",
+      "set ip 192.168.1.1/24",
+      "assign ip 192.168.1.1 mask 255.255.255.0",
+      "interface ip 192.168.1.1 255.255.255.0"
+    ],
+    ans: 0,
+    exp: "In Cisco IOS, the command 'ip address 192.168.1.1 255.255.255.0' is used inside interface configuration mode."
+  },
+  {
+    topic: "Cisco Configuration",
+    q: "What does the 'no shutdown' command do on a Cisco interface?",
+    opts: ["Deletes the interface", "Activates/enables the interface", "Resets the IP address", "Disables the interface"],
+    ans: 1,
+    exp: "'no shutdown' activates a Cisco interface that is administratively down."
+  },
+  {
+    topic: "Cisco Configuration",
+    q: "If a Cisco interface shows 'administratively down', what is the likely cause?",
+    opts: ["Cable or hardware problem", "The 'no shutdown' command has not been issued", "IP address conflict", "Routing protocol failure"],
+    ans: 1,
+    exp: "An interface is 'administratively down' when the 'no shutdown' command has not been issued."
+  },
+  {
+    topic: "Cisco Configuration",
+    q: "The 'show ip interface brief' command provides:",
+    opts: ["Full interface statistics", "A simple summary of interface status and IP addresses", "Routing table details", "ARP cache contents"],
+    ans: 1,
+    exp: "'show ip interface brief' gives a concise overview of all interfaces, their IP addresses, and status."
+  },
+  {
+    topic: "Cisco Configuration",
+    q: "A loopback interface in Cisco IOS is configured using which command prefix?",
+    opts: ["interface serial", "interface fastEthernet", "interface loopback", "interface virtual"],
+    ans: 2,
+    exp: "Loopback interfaces are created with 'interface loopback <number>' in Cisco IOS."
+  },
+  {
+    topic: "Cisco Configuration",
+    q: "When 'line protocol is down' appears on a Cisco interface, this indicates:",
+    opts: ["A cable or hardware problem", "A configuration problem", "The interface is administratively shut down", "An IP address conflict"],
+    ans: 1,
+    exp: "'Line protocol is down' indicates a configuration problem, whereas 'down' alone suggests a cable/hardware issue."
+  }
+];
+
+// ── STATE ──
+let answered = new Array(questions.length).fill(null); // null = skipped, index = chosen option
+let answeredCount = 0;
+
+// ── BUILD QUIZ ──
+function buildQuiz() {
+  const container = document.getElementById("questions-container");
+  container.innerHTML = "";
+  questions.forEach((q, i) => {
+    const card = document.createElement("div");
+    card.className = "question-card";
+    card.id = `card-${i}`;
+
+    const optsHtml = q.opts.map((opt, j) => {
+      return `<button class="option-btn" id="opt-${i}-${j}" onclick="selectAnswer(${i}, ${j})">
+        <span class="option-icon" id="icon-${i}-${j}">&#9711;</span>
+        <span>${opt}</span>
+      </button>`;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="q-number">Question ${i+1} of ${questions.length} &nbsp;|&nbsp; ${q.topic}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts-${i}">${optsHtml}</div>
+      <div class="explanation" id="exp-${i}"></div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectAnswer(qIdx, optIdx) {
+  if (answered[qIdx] !== null) return; // already answered
+
+  const wasUnanswered = (answered[qIdx] === null);
+  answered[qIdx] = optIdx;
+  if (wasUnanswered) {
+    answeredCount++;
+    updateProgress();
+  }
+
+  const q = questions[qIdx];
+  const isCorrect = (optIdx === q.ans);
+  const card = document.getElementById(`card-${qIdx}`);
+  const expDiv = document.getElementById(`exp-${qIdx}`);
+
+  // Disable all options
+  for (let j = 0; j < q.opts.length; j++) {
+    const btn = document.getElementById(`opt-${qIdx}-${j}`);
+    btn.disabled = true;
+    if (j === q.ans) {
+      btn.classList.add("reveal-correct");
+      document.getElementById(`icon-${qIdx}-${j}`).textContent = "✅";
+    }
+  }
+
+  const chosenBtn = document.getElementById(`opt-${qIdx}-${optIdx}`);
+  if (isCorrect) {
+    card.classList.add("correct-card");
+    expDiv.className = "explanation show correct-exp";
+    expDiv.innerHTML = `<strong>✅ Correct!</strong> ${q.exp}`;
+  } else {
+    chosenBtn.classList.remove("reveal-correct");
+    chosenBtn.classList.add("selected-wrong");
+    document.getElementById(`icon-${qIdx}-${optIdx}`).textContent = "❌";
+    card.classList.add("wrong-card");
+    expDiv.className = "explanation show wrong-exp";
+    expDiv.innerHTML = `<strong>❌ Incorrect.</strong> ${q.exp}`;
+  }
+}
+
+function updateProgress() {
+  const pct = Math.round((answeredCount / questions.length) * 100);
+  document.getElementById("progress-bar").style.width = pct + "%";
+  document.getElementById("progress-text").textContent = `${answeredCount} / ${questions.length} answered`;
+}
+
+// ── SUBMIT ──
+function submitQuiz() {
+  // Reveal unanswered
+  questions.forEach((q, i) => {
+    if (answered[i] === null) {
+      // Show correct answer for skipped
+      for (let j = 0; j < q.opts.length; j++) {
+        const btn = document.getElementById(`opt-${i}-${j}`);
+        if (btn) btn.disabled = true;
+        if (j === q.ans && btn) {
+          btn.classList.add("reveal-correct");
+          document.getElementById(`icon-${i}-${j}`).textContent = "✅";
+        }
+      }
+      const expDiv = document.getElementById(`exp-${i}`);
+      if (expDiv) {
+        expDiv.className = "explanation show wrong-exp";
+        expDiv.innerHTML = `<strong>⚪ Skipped.</strong> ${q.exp}`;
+      }
+    }
+  });
+
+  // Calculate scores
+  let correct = 0, wrong = 0, skipped = 0;
+  answered.forEach((a, i) => {
+    if (a === null) skipped++;
+    else if (a === questions[i].ans) correct++;
+    else wrong++;
+  });
+
+  const pct = Math.round((correct / questions.length) * 100);
+
+  // Show results
+  document.getElementById("quiz-section").style.display = "none";
+  const res = document.getElementById("results-section");
+  res.style.display = "block";
+  window.scrollTo(0, 0);
+
+  document.getElementById("res-pct").textContent = pct + "%";
+  document.getElementById("res-correct").textContent = correct;
+  document.getElementById("res-wrong").textContent = wrong;
+  document.getElementById("res-skipped").textContent = skipped;
+
+  let msg = "";
+  if (pct >= 90) msg = "🏆 Outstanding! You have mastered this material!";
+  else if (pct >= 75) msg = "🎉 Great job! A solid understanding of INPA Lecture 2.";
+  else if (pct >= 60) msg = "👍 Good effort! Review the highlighted topics to improve.";
+  else if (pct >= 40) msg = "📚 Keep studying! Focus on the areas below.";
+  else msg = "💪 Don't give up! Review the lecture slides and try again.";
+  document.getElementById("res-message").textContent = msg;
+
+  // Topic analysis
+  const topicMap = {};
+  questions.forEach((q, i) => {
+    if (!topicMap[q.topic]) topicMap[q.topic] = { total: 0, correct: 0 };
+    topicMap[q.topic].total++;
+    if (answered[i] === q.ans) topicMap[q.topic].correct++;
+  });
+
+  const topicBarsDiv = document.getElementById("topic-bars");
+  topicBarsDiv.innerHTML = "";
+  Object.entries(topicMap).forEach(([topic, data]) => {
+    const p = Math.round((data.correct / data.total) * 100);
+    const color = p >= 75 ? "#43a047" : p >= 50 ? "#fb8c00" : "#e53935";
+    topicBarsDiv.innerHTML += `
+      <div class="topic-row">
+        <div class="topic-name">${topic}</div>
+        <div class="topic-bar-wrap">
+          <div class="topic-bar" style="width:${p}%;background:${color};"></div>
+        </div>
+        <div class="topic-pct" style="color:${color};">${data.correct}/${data.total}</div>
+      </div>`;
+  });
+
+  // Needs improvement
+  const needsList = document.getElementById("needs-work-list");
+  needsList.innerHTML = "";
+  let hasNeeds = false;
+  questions.forEach((q, i) => {
+    if (answered[i] !== q.ans) {
+      hasNeeds = true;
+      const yourAns = answered[i] !== null ? q.opts[answered[i]] : "Skipped";
+      needsList.innerHTML += `
+        <div class="wrong-item">
+          <div class="wi-q">Q${i+1}: ${q.q}</div>
+          <div class="wi-ans">
+            <span class="wi-wrong">Your answer: ${yourAns}</span><br>
+            <span class="wi-correct">Correct: ${q.opts[q.ans]}</span>
+          </div>
+        </div>`;
+    }
+  });
+  if (!hasNeeds) {
+    needsList.innerHTML = "<p style='color:#2e7d32;font-weight:600;'>🎉 Perfect score! No areas need improvement.</p>";
+  }
+
+  // Detailed review
+  const detailList = document.getElementById("detail-list");
+  detailList.innerHTML = "";
+  questions.forEach((q, i) => {
+    const isSkipped = answered[i] === null;
+    const isCorrect = !isSkipped && answered[i] === q.ans;
+    const icon = isSkipped ? "⚪" : isCorrect ? "✅" : "❌";
+    const yourAns = isSkipped ? '<span class="ri-skipped">Skipped</span>' : `<span style="color:${isCorrect ? "#2e7d32" : "#c62828"}">${q.opts[answered[i]]}</span>`;
+    detailList.innerHTML += `
+      <div class="review-item">
+        <div class="ri-header">
+          <span class="ri-icon">${icon}</span>
+          <span class="ri-q">Q${i+1}: ${q.q}</span>
+        </div>
+        <div class="ri-detail">
+          Your answer: ${yourAns} &nbsp;|&nbsp;
+          <span style="color:#2e7d32;font-weight:600;">Correct: ${q.opts[q.ans]}</span><br>
+          <span style="color:#555;font-style:italic;">${q.exp}</span>
+        </div>
+      </div>`;
+  });
+}
+
+function retakeQuiz() {
+  answered = new Array(questions.length).fill(null);
+  answeredCount = 0;
+  updateProgress();
+  document.getElementById("results-section").style.display = "none";
+  document.getElementById("quiz-section").style.display = "block";
+  buildQuiz();
+  window.scrollTo(0, 0);
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ── INIT ──
+buildQuiz();
+</script>
+</body>
+</html>

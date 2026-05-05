@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>INPA Lecture 3 – MCQ Quiz</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      padding-bottom: 100px;
+    }
+
+    /* ── Fixed top bar ── */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: #1a365d;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #topbar h1 { font-size: 1rem; font-weight: 700; }
+    #topbar .bar-right { display: flex; gap: 10px; align-items: center; }
+    #progress-text { font-size: 0.85rem; opacity: 0.85; }
+
+    /* ── Fixed bottom bar ── */
+    #bottombar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: #1a365d;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 9px 22px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-home  { background: #63b3ed; color: #1a365d; }
+    .btn-home:hover { background: #90cdf4; }
+    .btn-submit { background: #48bb78; color: #fff; }
+    .btn-submit:hover { background: #38a169; }
+    .btn-reset  { background: #fc8181; color: #fff; }
+    .btn-reset:hover  { background: #e53e3e; }
+
+    /* ── Main content ── */
+    #quiz-container {
+      max-width: 860px;
+      margin: 80px auto 20px;
+      padding: 0 16px;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin: 28px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #bee3f8;
+    }
+
+    .question-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #90cdf4;
+      transition: border-color 0.3s;
+    }
+    .question-card.correct  { border-left-color: #48bb78; }
+    .question-card.wrong    { border-left-color: #fc8181; }
+    .question-card.unanswered { border-left-color: #f6ad55; }
+
+    .question-text {
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .q-num { color: #2b6cb0; margin-right: 6px; }
+
+    .options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border: 1px solid #e2e8f0;
+      transition: background 0.15s;
+    }
+    .options label:hover { background: #ebf8ff; }
+    .options input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+
+    .options label.opt-correct { background: #c6f6d5; border-color: #48bb78; }
+    .options label.opt-wrong   { background: #fed7d7; border-color: #fc8181; }
+
+    .feedback {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .feedback.show { display: block; }
+    .feedback.correct-fb { background: #f0fff4; border: 1px solid #48bb78; color: #276749; }
+    .feedback.wrong-fb   { background: #fff5f5; border: 1px solid #fc8181; color: #9b2c2c; }
+
+    /* ── Recap ── */
+    #recap {
+      display: none;
+      max-width: 860px;
+      margin: 80px auto 20px;
+      padding: 0 16px;
+    }
+    #recap.show { display: block; }
+    #quiz-container.hide { display: none; }
+
+    .recap-header {
+      background: #2b6cb0;
+      color: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .recap-header h2 { font-size: 1.6rem; margin-bottom: 8px; }
+    .score-big { font-size: 2.8rem; font-weight: 800; }
+    .score-sub { font-size: 1rem; opacity: 0.85; margin-top: 4px; }
+
+    .recap-stats {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .stat-box {
+      flex: 1; min-width: 130px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .stat-box .stat-num { font-size: 2rem; font-weight: 700; }
+    .stat-box .stat-label { font-size: 0.8rem; color: #718096; margin-top: 4px; }
+    .stat-box.green .stat-num { color: #38a169; }
+    .stat-box.red   .stat-num { color: #e53e3e; }
+    .stat-box.orange .stat-num { color: #dd6b20; }
+    .stat-box.blue  .stat-num { color: #2b6cb0; }
+
+    .recap-section { margin-bottom: 28px; }
+    .recap-section h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding: 8px 14px;
+      border-radius: 6px;
+    }
+    .recap-section.needs-work h3 { background: #fff5f5; color: #c53030; }
+    .recap-section.well-done h3  { background: #f0fff4; color: #276749; }
+    .recap-section.skipped h3    { background: #fffaf0; color: #c05621; }
+
+    .recap-item {
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-left: 4px solid #ccc;
+      font-size: 0.9rem;
+    }
+    .recap-item.ri-correct { border-left-color: #48bb78; }
+    .recap-item.ri-wrong   { border-left-color: #fc8181; }
+    .recap-item.ri-skip    { border-left-color: #f6ad55; }
+    .recap-item .ri-q  { font-weight: 600; margin-bottom: 6px; }
+    .recap-item .ri-your { color: #e53e3e; }
+    .recap-item .ri-ans  { color: #276749; }
+    .recap-item .ri-exp  { color: #4a5568; margin-top: 4px; font-style: italic; }
+
+    .topic-perf {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .topic-perf h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #2b6cb0; }
+    .topic-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+    .topic-name { width: 200px; flex-shrink: 0; }
+    .topic-bar-bg {
+      flex: 1;
+      background: #e2e8f0;
+      border-radius: 99px;
+      height: 12px;
+      overflow: hidden;
+    }
+    .topic-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #48bb78;
+      transition: width 0.5s;
+    }
+    .topic-pct { width: 40px; text-align: right; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Fixed top bar -->
+<div id="topbar">
+  <h1>🌐 INPA Lecture 3 – MCQ Quiz</h1>
+  <div class="bar-right">
+    <span id="progress-text">0 / 63 answered</span>
+  </div>
+</div>
+
+<!-- Fixed bottom bar -->
+<div id="bottombar">
+  <button class="btn btn-home" onclick="window.location.href='index.html'">🏠 Home</button>
+  <button class="btn btn-submit" onclick="submitQuiz()">📊 Submit &amp; See Results</button>
+  <button class="btn btn-reset" onclick="resetQuiz()">🔄 Reset</button>
+</div>
+
+<!-- Quiz -->
+<div id="quiz-container"></div>
+
+<!-- Recap -->
+<div id="recap"></div>
+
+<script>
+const questions = [
+  // ── SECTION 1: DHCP ──
+  {
+    section: "DHCP",
+    q: "What does DHCP stand for?",
+    opts: ["Dynamic Host Configuration Protocol","Dynamic Host Control Protocol","Distributed Host Configuration Protocol","Dynamic Hypertext Configuration Protocol"],
+    ans: 0,
+    exp: "DHCP stands for Dynamic Host Configuration Protocol. It allows dynamic allocation of IP addresses with minimal human intervention."
+  },
+  {
+    section: "DHCP",
+    q: "Which RFC is the current standard for DHCP?",
+    opts: ["RFC 1058","RFC 1541","RFC 2131","RFC 2453"],
+    ans: 2,
+    exp: "DHCP is currently standardized under RFC 2131. RFC 1541 was an earlier version."
+  },
+  {
+    section: "DHCP",
+    q: "Which UDP port does the DHCP server use?",
+    opts: ["67","68","69","520"],
+    ans: 0,
+    exp: "The DHCP server listens on UDP port 67, while the DHCP client uses UDP port 68."
+  },
+  {
+    section: "DHCP",
+    q: "Which UDP port does the DHCP client use?",
+    opts: ["67","68","520","53"],
+    ans: 1,
+    exp: "DHCP clients use UDP port 68. These ports are the same as those used by the predecessor protocol BOOTP."
+  },
+  {
+    section: "DHCP",
+    q: "What is the correct order of the main DHCP message exchange?",
+    opts: [
+      "Discover → Offer → Request → Acknowledge",
+      "Request → Offer → Discover → Acknowledge",
+      "Offer → Discover → Request → Acknowledge",
+      "Discover → Request → Offer → Acknowledge"
+    ],
+    ans: 0,
+    exp: "The DORA process: DHCPDISCOVER (client) → DHCPOFFER (server) → DHCPREQUEST (client) → DHCPACK (server)."
+  },
+  {
+    section: "DHCP",
+    q: "What is a DHCP 'lease'?",
+    opts: [
+      "A permanent IP address assignment",
+      "An IP address offered for a limited time period",
+      "A broadcast message sent by the client",
+      "A subnet mask configuration"
+    ],
+    ans: 1,
+    exp: "The DHCP server offers an IP address and network parameters for a limited time called a lease. In practice, leases may vary from 30 minutes to a week."
+  },
+  {
+    section: "DHCP",
+    q: "When is a DHCPREQUEST sent for lease renewal?",
+    opts: [
+      "When 25% of the lease has expired",
+      "When 50% of the lease has expired",
+      "When 75% of the lease has expired",
+      "When 100% of the lease has expired"
+    ],
+    ans: 1,
+    exp: "A DHCPREQUEST for lease renewal is sent when 50% of the lease time has expired."
+  },
+  {
+    section: "DHCP",
+    q: "What is the destination IP address of a DHCPDISCOVER message?",
+    opts: ["192.168.1.1","127.0.0.1","255.255.255.255","0.0.0.0"],
+    ans: 2,
+    exp: "DHCPDISCOVER is sent as a broadcast to 255.255.255.255 because the client does not yet know the DHCP server's address."
+  },
+  {
+    section: "DHCP",
+    q: "Which of the following is a configuration parameter provided by DHCP?",
+    opts: ["MAC address","CPU speed","IP address","Hard disk size"],
+    ans: 2,
+    exp: "DHCP provides network configuration parameters including IP address, router (default gateway), subnet mask, and DNS server addresses."
+  },
+  {
+    section: "DHCP",
+    q: "What is the advantage of a SHORT DHCP lease?",
+    opts: [
+      "More reliable if DHCP server fails",
+      "Clients get updated parameters quickly and it is essential if you have more clients than addresses",
+      "Reduces network traffic",
+      "Increases security"
+    ],
+    ans: 1,
+    exp: "Short leases mean clients get updated parameters quickly and are essential when you have more clients than available addresses."
+  },
+  {
+    section: "DHCP",
+    q: "What is the advantage of a LONG DHCP lease?",
+    opts: [
+      "Clients get updated parameters quickly",
+      "Essential if more clients than addresses",
+      "More reliable – clients may continue to operate for a week after DHCP server fails",
+      "Reduces IP address exhaustion"
+    ],
+    ans: 2,
+    exp: "Long leases are more reliable: clients may continue to operate for a week after the DHCP server fails."
+  },
+  {
+    section: "DHCP",
+    q: "What does the DHCPRELEASE message do?",
+    opts: [
+      "Requests a new IP address",
+      "Renews the current lease",
+      "Deactivates the client's IP address",
+      "Broadcasts the server's address"
+    ],
+    ans: 2,
+    exp: "DHCPRELEASE is sent by the client to deactivate its IP address. However, the protocol does not mandate sending it since clients may not know when they will be unplugged."
+  },
+  {
+    section: "DHCP",
+    q: "Which obsolete protocols did DHCP supersede?",
+    opts: ["DNS and HTTP","RARP and BOOTP","FTP and SMTP","ARP and ICMP"],
+    ans: 1,
+    exp: "Before DHCP, RARP (Reverse Address Resolution Protocol) and BOOTP (Bootstrap Protocol) were used for IP address assignment. DHCP superseded both."
+  },
+  {
+    section: "DHCP",
+    q: "In the DHCP configuration example, what is the default-lease-time value?",
+    opts: ["300 seconds","600 seconds","3600 seconds","7200 seconds"],
+    ans: 1,
+    exp: "The example shows 'default-lease-time 600;' which means 600 seconds (10 minutes)."
+  },
+  {
+    section: "DHCP",
+    q: "In the DHCP configuration example, what is the max-lease-time?",
+    opts: ["600 seconds","1800 seconds","3600 seconds","7200 seconds"],
+    ans: 3,
+    exp: "The example shows 'max-lease-time 7200;' which means 7200 seconds (2 hours)."
+  },
+  {
+    section: "DHCP",
+    q: "In the DHCP Cisco IOS configuration, which command defines the IP range for the pool?",
+    opts: [
+      "ip dhcp pool POOLNAME",
+      "network 192.168.x.x 255.255.255.x",
+      "default-router 192.168.X.X",
+      "ip dhcp excluded-address X.X.X.X Z.Z.Z.Z"
+    ],
+    ans: 1,
+    exp: "The 'network' command inside the DHCP pool configuration defines the IP address range to be assigned to clients."
+  },
+  {
+    section: "DHCP",
+    q: "What does the 'ip dhcp excluded-address' command do?",
+    opts: [
+      "Assigns a static IP to a device",
+      "Excludes specific IP addresses from being assigned by DHCP",
+      "Removes the DHCP pool",
+      "Sets the lease duration"
+    ],
+    ans: 1,
+    exp: "'ip dhcp excluded-address X.X.X.X Z.Z.Z.Z' prevents DHCP from assigning those addresses (e.g., reserved for routers or servers)."
+  },
+
+  // ── SECTION 2: Packet Handling ──
+  {
+    section: "Packet Handling",
+    q: "In Circuit Switching, what must be established before communication begins?",
+    opts: [
+      "A packet header",
+      "A dedicated channel between users",
+      "A routing table entry",
+      "A MAC address binding"
+    ],
+    ans: 1,
+    exp: "In Circuit Switching, a dedicated channel must be established before the call is made. This channel is reserved for the entire duration of the connection (e.g., PSTN phone calls)."
+  },
+  {
+    section: "Packet Handling",
+    q: "What happens to idle resources in a Circuit Switched network?",
+    opts: [
+      "They are shared with other connections",
+      "They are released back to the pool",
+      "They cannot be used by other ongoing communications",
+      "They are automatically reallocated"
+    ],
+    ans: 2,
+    exp: "In Circuit Switching, any idle resource that is part of the reserved channel cannot be used by other ongoing communications – this is a key inefficiency."
+  },
+  {
+    section: "Packet Handling",
+    q: "Which of the following is an example of a Circuit Switched network?",
+    opts: ["The Internet","UDP streaming","PSTN (Public Switched Telephone Network)","Wi-Fi"
+    ],
+    ans: 2,
+    exp: "PSTN (Public Switched Telephone Network) and POTS (Plain Old Telephone Service) are classic examples of circuit-switched networks."
+  },
+  {
+    section: "Packet Handling",
+    q: "In Packet Switching, how is a message transmitted?",
+    opts: [
+      "As a single large block over a dedicated channel",
+      "Broken into small packets, each containing routing information",
+      "Over a pre-reserved physical path",
+      "Only after a connection is fully established"
+    ],
+    ans: 1,
+    exp: "In Packet Switching, a message is broken into a series of small packets, each containing routing information. No dedicated connection is required."
+  },
+  {
+    section: "Packet Handling",
+    q: "Which protocol is an example of Datagram (connectionless) packet switching?",
+    opts: ["TCP","ATM","IP / UDP","PSTN"],
+    ans: 2,
+    exp: "IP and UDP are connectionless (datagram) protocols. Each packet is treated independently and every intermediate node makes routing decisions."
+  },
+  {
+    section: "Packet Handling",
+    q: "Which protocol is an example of Virtual Circuit (connection-oriented) packet switching?",
+    opts: ["UDP","IP","ICMP","TCP"],
+    ans: 3,
+    exp: "TCP uses a virtual circuit approach: a preplanned route is established before packets are sent, and the route is fixed for the duration of the logical connection."
+  },
+  {
+    section: "Packet Handling",
+    q: "In Datagram packet switching, who makes routing decisions?",
+    opts: [
+      "Only the source node",
+      "Only the destination node",
+      "Every intermediate node",
+      "A central controller"
+    ],
+    ans: 2,
+    exp: "In datagram (connectionless) packet switching, every intermediate node must independently take routing decisions for each packet."
+  },
+  {
+    section: "Packet Handling",
+    q: "What type of bandwidth does Packet Switching provide?",
+    opts: ["Fixed bandwidth","Dynamic bandwidth","No bandwidth","Guaranteed bandwidth"],
+    ans: 1,
+    exp: "Packet switching allocates dynamic bandwidth based on demand, unlike circuit switching which reserves fixed bandwidth."
+  },
+  {
+    section: "Packet Handling",
+    q: "What happens in Circuit Switching when the network is overloaded?",
+    opts: [
+      "Packet delay increases",
+      "Call setup may be blocked",
+      "Packets are dropped",
+      "Bandwidth increases automatically"
+    ],
+    ans: 1,
+    exp: "In Circuit Switching, overload may block call setup. In Datagram Packet Switching, overload increases packet delay instead."
+  },
+  {
+    section: "Packet Handling",
+    q: "Which switching type has overhead bits in EVERY packet?",
+    opts: [
+      "Circuit Switching only",
+      "Datagram Packet Switching only",
+      "Both Datagram and Virtual Circuit Packet Switching",
+      "None of the above"
+    ],
+    ans: 2,
+    exp: "Both Datagram and Virtual Circuit Packet Switching have overhead bits in each packet. Circuit Switching has no overhead bits after call setup."
+  },
+  {
+    section: "Packet Handling",
+    q: "Virtual Circuit packet switching is described as 'mixed' because it:",
+    opts: [
+      "Uses both wired and wireless connections",
+      "Shares some properties of both circuit switching and datagram switching",
+      "Supports both IPv4 and IPv6",
+      "Can handle both voice and data"
+    ],
+    ans: 1,
+    exp: "Virtual circuit can be regarded as 'mixed' because it shares some properties of circuit switching (pre-established route, connection-oriented) while still using packet switching."
+  },
+
+  // ── SECTION 3: RIP ──
+  {
+    section: "RIP",
+    q: "What type of routing protocol is RIPv1?",
+    opts: [
+      "Link State, Classless",
+      "Distance Vector, Classful",
+      "Path Vector, Classless",
+      "Link State, Classful"
+    ],
+    ans: 1,
+    exp: "RIPv1 is a Distance Vector, Classful routing protocol. It uses hop count as its only metric."
+  },
+  {
+    section: "RIP",
+    q: "Which UDP port does RIP use?",
+    opts: ["67","68","520","53"],
+    ans: 2,
+    exp: "RIP uses UDP on port 520 for routing updates."
+  },
+  {
+    section: "RIP",
+    q: "What metric does RIP use for path selection?",
+    opts: ["Bandwidth","Latency","Hop count","Cost"],
+    ans: 2,
+    exp: "RIP uses hop count as its only metric for path selection. The 'Distance' in Distance Vector refers to hop count, and 'Vector' refers to direction."
+  },
+  {
+    section: "RIP",
+    q: "RIP evolved from which network system?",
+    opts: [
+      "ARPANET",
+      "Xerox Network System (NS)",
+      "IBM SNA",
+      "Novell NetWare"
+    ],
+    ans: 1,
+    exp: "RIP evolved from the Xerox Network System (NS) in the late 1970s and was standardized under RFC 1058 in 1988."
+  },
+  {
+    section: "RIP",
+    q: "Under which RFC was RIP standardized in 1988?",
+    opts: ["RFC 791","RFC 1058","RFC 2131","RFC 2453"],
+    ans: 1,
+    exp: "RIP was standardized under RFC 1058 in 1988."
+  },
+  {
+    section: "RIP",
+    q: "What is the maximum hop count allowed in RIP?",
+    opts: ["8","10","15","255"],
+    ans: 2,
+    exp: "RIP is limited to a maximum of 15 hops. A hop count of 16 is considered unreachable."
+  },
+  {
+    section: "RIP",
+    q: "What is the main limitation of RIPv1 regarding subnetting?",
+    opts: [
+      "It cannot handle more than 10 subnets",
+      "It does not send subnet mask information in updates",
+      "It only supports Class A networks",
+      "It requires manual subnet configuration"
+    ],
+    ans: 1,
+    exp: "RIPv1 is classful and does not send subnet mask information in updates. Therefore, RIPv1 networks cannot be separated and cannot implement VLSM."
+  },
+  {
+    section: "RIP",
+    q: "What does RIPv2 add compared to RIPv1?",
+    opts: [
+      "Support for more than 15 hops",
+      "Subnet mask in routing updates and router authentication",
+      "Link-state routing algorithm",
+      "Support for IPv6 natively"
+    ],
+    ans: 1,
+    exp: "RIPv2 (RFC 2453) adds subnet mask in updates (classless), next-hop IP address field, and router authentication (MD5). It is compatible with RIPv1."
+  },
+  {
+    section: "RIP",
+    q: "Under which RFC is RIPv2 standardized?",
+    opts: ["RFC 1058","RFC 1541","RFC 2131","RFC 2453"],
+    ans: 3,
+    exp: "RIPv2 is standardized under RFC 2453."
+  },
+  {
+    section: "RIP",
+    q: "What does the 'Next Hop' field in RIPv2 indicate?",
+    opts: [
+      "The final destination of the packet",
+      "The IP address of the next router to forward packets to",
+      "The source router's IP address",
+      "The subnet mask of the destination"
+    ],
+    ans: 1,
+    exp: "The Next Hop field in RIPv2 tells which destination the receiver's routing table entry will be sent to. If '0', the RIP message sender's address is used."
+  },
+  {
+    section: "RIP",
+    q: "What is 'convergence' in the context of routing protocols?",
+    opts: [
+      "The process of encrypting routing tables",
+      "The state where a set of routers have the same topological information",
+      "The maximum number of hops allowed",
+      "The process of assigning IP addresses"
+    ],
+    ans: 1,
+    exp: "Convergence refers to the state of a set of routers that have the same topological information. RIP has slow convergence, which is one of its downsides."
+  },
+  {
+    section: "RIP",
+    q: "By default, a Cisco router running RIP sends which version and can receive which versions?",
+    opts: [
+      "Sends v2, receives v2 only",
+      "Sends v1, receives both v1 and v2",
+      "Sends v2, receives both v1 and v2",
+      "Sends v1, receives v1 only"
+    ],
+    ans: 1,
+    exp: "By default, a Cisco router sends RIPv1 and can receive both RIPv1 and RIPv2."
+  },
+  {
+    section: "RIP",
+    q: "What is the IPv6 version of RIP called?",
+    opts: ["RIPv3","RIPng","RIP6","OSPFv3"],
+    ans: 1,
+    exp: "RIPng (next generation) is the IPv6 form of RIP."
+  },
+  {
+    section: "RIP",
+    q: "Which Cisco IOS command displays RIP routes in the routing table?",
+    opts: [
+      "show ip protocols",
+      "show ip route rip",
+      "show rip database",
+      "debug ip rip"
+    ],
+    ans: 1,
+    exp: "'show ip route rip' displays RIP routes. 'show ip protocols' displays information about the routing protocol used on each interface."
+  },
+  {
+    section: "RIP",
+    q: "In the RIP routing table output '[120/1]', what does '120' represent?",
+    opts: [
+      "The hop count",
+      "The administrative distance",
+      "The bandwidth in Mbps",
+      "The subnet mask length"
+    ],
+    ans: 1,
+    exp: "In '[120/1]', 120 is the administrative distance of RIP, and 1 is the metric (hop count)."
+  },
+  {
+    section: "RIP",
+    q: "What authentication method does RIPv2 support?",
+    opts: ["SHA-256","AES","MD5","DES"],
+    ans: 2,
+    exp: "RIPv2 supports router authentication using MD5 with authentication keys (passwords)."
+  },
+  {
+    section: "RIP",
+    q: "On startup, what does a RIP-configured interface do?",
+    opts: [
+      "Sends a unicast request to the default gateway",
+      "Broadcasts a request asking RIP neighbors to send their complete routing table",
+      "Waits silently for updates",
+      "Sends its own routing table immediately"
+    ],
+    ans: 1,
+    exp: "On startup, each RIP-configured interface broadcasts a request message asking any RIP neighbors to send their complete routing table."
+  },
+
+  // ── SECTION 4: OSPF ──
+  {
+    section: "OSPF",
+    q: "What does OSPF stand for?",
+    opts: [
+      "Open Shortest Path First",
+      "Optimized Shortest Path Forwarding",
+      "Open System Path First",
+      "Optimized System Protocol First"
+    ],
+    ans: 0,
+    exp: "OSPF stands for Open Shortest Path First. It is the most widely used Interior Gateway Protocol (IGP)."
+  },
+  {
+    section: "OSPF",
+    q: "What type of routing algorithm does OSPF use?",
+    opts: [
+      "Distance Vector",
+      "Path Vector",
+      "Link State Routing (LSR)",
+      "Bellman-Ford"
+    ],
+    ans: 2,
+    exp: "OSPF uses Link State Routing (LSR) algorithm. It creates a complete view/map of the network topology using information gathered from all routers."
+  },
+  {
+    section: "OSPF",
+    q: "Which algorithm does OSPF use to find the Shortest Path?",
+    opts: [
+      "Bellman-Ford",
+      "Floyd-Warshall",
+      "Dijkstra's algorithm",
+      "A* algorithm"
+    ],
+    ans: 2,
+    exp: "OSPF uses Dijkstra's algorithm (also called Shortest Path First - SPF) to find the shortest path tree to all destination nodes."
+  },
+  {
+    section: "OSPF",
+    q: "When does OSPF send a link-state update after the network has converged?",
+    opts: [
+      "Every 30 seconds",
+      "Every 90 seconds",
+      "Only when there is a change in the topology",
+      "Every 5 minutes"
+    ],
+    ans: 2,
+    exp: "Unlike RIP, OSPF link-state routing protocols do not use periodic updates. After convergence, a link-state update is only sent when there is a change in the topology."
+  },
+  {
+    section: "OSPF",
+    q: "What does LSA stand for in OSPF?",
+    opts: [
+      "Link State Advertisement",
+      "Local System Address",
+      "Logical Subnet Assignment",
+      "Link Speed Announcement"
+    ],
+    ans: 0,
+    exp: "LSA stands for Link State Advertisement. Routers collect LS (Link State) information via LSAs to form the network topology map."
+  },
+  {
+    section: "OSPF",
+    q: "What is the OSPF HELLO procedure used for?",
+    opts: [
+      "Encrypting routing data",
+      "Detecting topology changes via multicast",
+      "Assigning IP addresses",
+      "Establishing TCP connections"
+    ],
+    ans: 1,
+    exp: "The HELLO procedure is used for neighbor discovery and topology change detection via multicast. The routing process gets repeated upon every change detection."
+  },
+  {
+    section: "OSPF",
+    q: "Which of the following is a link cost factor in OSPF?",
+    opts: [
+      "MAC address",
+      "Throughput [bits/s]",
+      "DHCP lease time",
+      "DNS TTL"
+    ],
+    ans: 1,
+    exp: "OSPF link cost factors include: Throughput, Distance, RTT (Round-Trip Time), Number of hops, Availability, and Reliability."
+  },
+  {
+    section: "OSPF",
+    q: "In Dijkstra's algorithm, what is set M?",
+    opts: [
+      "The set of all network nodes",
+      "The set of nodes connected to the Shortest Path Tree (SPT)",
+      "The set of failed links",
+      "The set of destination addresses"
+    ],
+    ans: 1,
+    exp: "In Dijkstra's algorithm, M is the set of nodes already connected to the Shortest Path Tree (SPT). Initially M contains only the source node S."
+  },
+  {
+    section: "OSPF",
+    q: "In the Dijkstra example from the lecture, what is the shortest path cost from S to node 1?",
+    opts: ["1","2","3","5"],
+    ans: 1,
+    exp: "From the Dijkstra example, the cost from S to node 1 is 2 (direct link weight = 2)."
+  },
+  {
+    section: "OSPF",
+    q: "In the Dijkstra example, what is the shortest path from S to node 3?",
+    opts: ["S → 3","S → 1 → 3","S → 2 → 3","S → 4 → 3"],
+    ans: 1,
+    exp: "According to the SPT table in the lecture, the shortest path from S to node 3 is S → 1 → 3."
+  },
+  {
+    section: "OSPF",
+    q: "In the Dijkstra example, what is the shortest path from S to node 5?",
+    opts: ["S → 5","S → 1 → 5","S → 4 → 7 → 5","S → 2 → 5"],
+    ans: 2,
+    exp: "According to the SPT table in the lecture, the shortest path from S to node 5 is S → 4 → 7 → 5."
+  },
+  {
+    section: "OSPF",
+    q: "What is the backbone area number in OSPF?",
+    opts: ["Area 1","Area 255","Area 0","Area 100"],
+    ans: 2,
+    exp: "Area 0 (zero), or 0.0.0.0, by convention represents the core or backbone area of an OSPF network. All other areas must connect to Area 0."
+  },
+  {
+    section: "OSPF",
+    q: "What format are OSPF area IDs expressed in?",
+    opts: [
+      "8-bit numbers",
+      "16-bit numbers",
+      "32-bit numbers (decimal or dot-decimal notation)",
+      "64-bit numbers"
+    ],
+    ans: 2,
+    exp: "OSPF areas are identified by 32-bit numbers expressed in decimal or dot-decimal notation (e.g., Area 0 = 0.0.0.0)."
+  },
+  {
+    section: "OSPF",
+    q: "What is an ABR (Area Border Router) in OSPF?",
+    opts: [
+      "A router with all interfaces in the same area",
+      "A router that connects subarea networks to the backbone network",
+      "A router that connects different Autonomous Systems",
+      "A backup router for the DR"
+    ],
+    ans: 1,
+    exp: "An ABR (Area Border Router) connects subarea networks to the backbone network and maintains separate link-state databases for each area it serves."
+  },
+  {
+    section: "OSPF",
+    q: "What is an ASBR in OSPF?",
+    opts: [
+      "Area Subnet Border Router",
+      "Autonomous System Boundary Router",
+      "Advanced Shortest-path Backbone Router",
+      "Area State Backup Router"
+    ],
+    ans: 1,
+    exp: "ASBR stands for Autonomous System Boundary Router. It connects between Autonomous Systems using multiple routing protocols."
+  },
+  {
+    section: "OSPF",
+    q: "What is the role of the DR (Designated Router) in OSPF?",
+    opts: [
+      "To assign IP addresses to clients",
+      "To share Summary link states with other areas",
+      "To block unauthorized routing updates",
+      "To serve as the primary DNS server"
+    ],
+    ans: 1,
+    exp: "The DR (Designated Router) has the responsibility to share 'Summary link states' with other areas. The BDR (Backup Designated Router) serves for load-balancing."
+  },
+  {
+    section: "OSPF",
+    q: "What is an IR (Internal Router) in OSPF?",
+    opts: [
+      "A router connecting two different OSPF areas",
+      "A router with all routing interfaces belonging to the same network area",
+      "A router connecting to the Internet",
+      "A router running both OSPF and RIP"
+    ],
+    ans: 1,
+    exp: "An IR (Internal Router) has all its routing interfaces belonging to the same network area."
+  },
+  {
+    section: "OSPF",
+    q: "In the OSPF Cisco IOS configuration, what does the 'wildcard' represent?",
+    opts: [
+      "The same as the subnet mask",
+      "The opposite of the subnet mask",
+      "The broadcast address",
+      "The network address"
+    ],
+    ans: 1,
+    exp: "In OSPF configuration, the wildcard mask is the opposite (bitwise inverse) of the subnet mask. For example, a /24 subnet mask 255.255.255.0 has wildcard 0.0.0.255."
+  },
+  {
+    section: "OSPF",
+    q: "In what order should OSPF areas be configured?",
+    opts: [
+      "Any order is fine",
+      "Start with the highest area number",
+      "Start with Area 0 first, then Area 1 and so on",
+      "Start with the area with the most routers"
+    ],
+    ans: 2,
+    exp: "Always configure in order: start by configuring Area 0 first, then Area 1 and so on."
+  },
+  {
+    section: "OSPF",
+    q: "What Cisco IOS command removes RIP configuration?",
+    opts: [
+      "delete router rip",
+      "no router rip",
+      "remove rip",
+      "disable rip"
+    ],
+    ans: 1,
+    exp: "The command 'no router rip' (in config mode) removes the RIP routing configuration from the router."
+  },
+  {
+    section: "OSPF",
+    q: "OSPF supports which type of routing?",
+    opts: [
+      "Classful routing only",
+      "Classless Inter-Domain Routing (CIDR)",
+      "Distance vector routing only",
+      "Static routing only"
+    ],
+    ans: 1,
+    exp: "OSPF supports Classless Inter-Domain Routing (CIDR), unlike RIPv1 which is classful."
+  },
+
+  // ── SECTION 5: General / Comparison ──
+  {
+    section: "General & Comparison",
+    q: "Which category does RIP belong to in terms of gateway protocols?",
+    opts: [
+      "Exterior Gateway Protocol (EGP)",
+      "Interior Gateway Protocol (IGP)",
+      "Border Gateway Protocol (BGP)",
+      "Path Vector Protocol"
+    ],
+    ans: 1,
+    exp: "RIP is an Interior Gateway Protocol (IGP) used within an Autonomous System. BGP is an Exterior Gateway Protocol used between Autonomous Systems."
+  },
+  {
+    section: "General & Comparison",
+    q: "Which protocol is classified as a Path Vector protocol?",
+    opts: ["RIP","OSPF","BGPv4","EIGRP"],
+    ans: 2,
+    exp: "BGPv4 (Border Gateway Protocol version 4) is a Path Vector routing protocol used as the primary EGP on the Internet."
+  },
+  {
+    section: "General & Comparison",
+    q: "Which of the following is a Link State routing protocol?",
+    opts: ["RIP","IGRP","EIGRP","OSPF"],
+    ans: 3,
+    exp: "OSPF (and IS-IS) are Link State routing protocols. RIP and IGRP are Distance Vector protocols. EIGRP is a hybrid (advanced distance vector)."
+  },
+  {
+    section: "General & Comparison",
+    q: "What is the key difference between RIPv1 and RIPv2 regarding subnet handling?",
+    opts: [
+      "RIPv1 supports VLSM; RIPv2 does not",
+      "RIPv1 is classful (no subnet mask in updates); RIPv2 is classless (includes subnet mask)",
+      "Both support classless routing",
+      "RIPv2 uses hop count; RIPv1 uses bandwidth"
+    ],
+    ans: 1,
+    exp: "RIPv1 is classful and does not send subnet mask information. RIPv2 is classless and includes subnet mask in its updates, enabling VLSM support."
+  },
+  {
+    section: "General & Comparison",
+    q: "Compared to RIP, what is a major advantage of OSPF?",
+    opts: [
+      "OSPF is limited to 15 hops",
+      "OSPF uses periodic updates every 30 seconds",
+      "OSPF has faster convergence and no hop count limit",
+      "OSPF is simpler to configure"
+    ],
+    ans: 2,
+    exp: "OSPF has faster convergence (only updates on topology changes), no hop count limit, and uses cost-based metrics rather than just hop count."
+  },
+  {
+    section: "General & Comparison",
+    q: "What does CIDR stand for?",
+    opts: [
+      "Classless Inter-Domain Routing",
+      "Classful Internet Domain Routing",
+      "Centralized Internet Data Routing",
+      "Classless Internal Domain Routing"
+    ],
+    ans: 0,
+    exp: "CIDR stands for Classless Inter-Domain Routing. It allows more flexible IP address allocation compared to the old classful system."
+  },
+  {
+    section: "General & Comparison",
+    q: "What does VLSM stand for?",
+    opts: [
+      "Variable Length Subnet Masking",
+      "Virtual LAN Subnet Management",
+      "Variable Link State Metric",
+      "Virtual Layer Subnet Mapping"
+    ],
+    ans: 0,
+    exp: "VLSM stands for Variable Length Subnet Masking. RIPv1 cannot implement VLSM because it does not carry subnet mask information."
+  },
+  {
+    section: "General & Comparison",
+    q: "What does SPT stand for in OSPF?",
+    opts: [
+      "Shortest Path Table",
+      "Shortest Path Tree",
+      "System Protocol Tree",
+      "Subnet Path Topology"
+    ],
+    ans: 1,
+    exp: "SPT stands for Shortest Path Tree. OSPF's link-state routing algorithm forms a loop-free Shortest Path Tree to all destination nodes using Dijkstra's algorithm."
+  },
+  {
+    section: "General & Comparison",
+    q: "The INPA course grading: what percentage is allocated to the Final evaluation (Quiz & Exam)?",
+    opts: ["10%","40%","50%","30%"],
+    ans: 2,
+    exp: "According to the course outline: Class attendance 10%, Class assignments 40%, Final evaluation (Quiz & Exam) 50%."
+  },
+  {
+    section: "General & Comparison",
+    q: "What is the total duration of the INPA course?",
+    opts: ["16 hours","20 hours","24 hours","32 hours"],
+    ans: 2,
+    exp: "The INPA course has a total of 24 hours (8 sessions × 3 hours each)."
+  }
+];
+
+// ─────────────────────────────────────────────
+// Build quiz HTML
+// ─────────────────────────────────────────────
+const container = document.getElementById('quiz-container');
+let currentSection = '';
+
+questions.forEach((q, i) => {
+  if (q.section !== currentSection) {
+    currentSection = q.section;
+    const sec = document.createElement('div');
+    sec.className = 'section-title';
+    sec.textContent = '📌 ' + currentSection;
+    container.appendChild(sec);
+  }
+
+  const card = document.createElement('div');
+  card.className = 'question-card';
+  card.id = 'card-' + i;
+
+  const qText = document.createElement('div');
+  qText.className = 'question-text';
+  qText.innerHTML = `<span class="q-num">Q${i+1}.</span>${q.q}`;
+  card.appendChild(qText);
+
+  const opts = document.createElement('div');
+  opts.className = 'options';
+  opts.id = 'opts-' + i;
+
+  q.opts.forEach((opt, j) => {
+    const lbl = document.createElement('label');
+    lbl.id = `lbl-${i}-${j}`;
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'q' + i;
+    radio.value = j;
+    radio.addEventListener('change', () => handleAnswer(i, j));
+    lbl.appendChild(radio);
+    lbl.appendChild(document.createTextNode(opt));
+    opts.appendChild(lbl);
+  });
+  card.appendChild(opts);
+
+  const fb = document.createElement('div');
+  fb.className = 'feedback';
+  fb.id = 'fb-' + i;
+  card.appendChild(fb);
+
+  container.appendChild(card);
+});
+
+// ─────────────────────────────────────────────
+// Answer handling
+// ─────────────────────────────────────────────
+const userAnswers = new Array(questions.length).fill(null);
+
+function handleAnswer(qIdx, optIdx) {
+  userAnswers[qIdx] = optIdx;
+  const q = questions[qIdx];
+  const card = document.getElementById('card-' + qIdx);
+  const fb = document.getElementById('fb-' + qIdx);
+
+  // Reset label styles
+  q.opts.forEach((_, j) => {
+    const lbl = document.getElementById(`lbl-${qIdx}-${j}`);
+    lbl.classList.remove('opt-correct', 'opt-wrong');
+  });
+
+  const correctLbl = document.getElementById(`lbl-${qIdx}-${q.ans}`);
+  correctLbl.classList.add('opt-correct');
+
+  if (optIdx !== q.ans) {
+    document.getElementById(`lbl-${qIdx}-${optIdx}`).classList.add('opt-wrong');
+    fb.className = 'feedback show wrong-fb';
+    fb.innerHTML = `❌ <strong>Incorrect.</strong> The correct answer is: <em>${q.opts[q.ans]}</em><br>💡 ${q.exp}`;
+    card.className = 'question-card wrong';
+  } else {
+    fb.className = 'feedback show correct-fb';
+    fb.innerHTML = `✅ <strong>Correct!</strong> 💡 ${q.exp}`;
+    card.className = 'question-card correct';
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  document.getElementById('progress-text').textContent = `${answered} / ${questions.length} answered`;
+}
+
+// ─────────────────────────────────────────────
+// Submit
+// ─────────────────────────────────────────────
+function submitQuiz() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  let correct = 0, wrong = 0, skipped = 0;
+  const wrongItems = [], skippedItems = [], correctItems = [];
+
+  questions.forEach((q, i) => {
+    const ua = userAnswers[i];
+    if (ua === null) {
+      skipped++;
+      skippedItems.push(i);
+      document.getElementById('card-' + i).className = 'question-card unanswered';
+    } else if (ua === q.ans) {
+      correct++;
+      correctItems.push(i);
+    } else {
+      wrong++;
+      wrongItems.push(i);
+    }
+  });
+
+  const pct = Math.round((correct / questions.length) * 100);
+
+  // Topic performance
+  const topicMap = {};
+  questions.forEach((q, i) => {
+    if (!topicMap[q.section]) topicMap[q.section] = { total: 0, correct: 0 };
+    topicMap[q.section].total++;
+    if (userAnswers[i] === q.ans) topicMap[q.section].correct++;
+  });
+
+  let recapHTML = `
+    <div class="recap-header">
+      <h2>📊 Quiz Results</h2>
+      <div class="score-big">${pct}%</div>
+      <div class="score-sub">${correct} correct out of ${questions.length} questions</div>
+    </div>
+    <div class="recap-stats">
+      <div class="stat-box green"><div class="stat-num">${correct}</div><div class="stat-label">✅ Correct</div></div>
+      <div class="stat-box red"><div class="stat-num">${wrong}</div><div class="stat-label">❌ Wrong</div></div>
+      <div class="stat-box orange"><div class="stat-num">${skipped}</div><div class="stat-label">⏭️ Skipped</div></div>
+      <div class="stat-box blue"><div class="stat-num">${answered}</div><div class="stat-label">📝 Answered</div></div>
+    </div>
+    <div class="topic-perf"><h3>📈 Performance by Topic</h3>`;
+
+  Object.entries(topicMap).forEach(([topic, data]) => {
+    const tpct = Math.round((data.correct / data.total) * 100);
+    recapHTML += `
+      <div class="topic-row">
+        <div class="topic-name">${topic}</div>
+        <div class="topic-bar-bg"><div class="topic-bar-fill" style="width:${tpct}%"></div></div>
+        <div class="topic-pct">${tpct}%</div>
+      </div>`;
+  });
+  recapHTML += `</div>`;
+
+  // Needs work
+  if (wrongItems.length > 0 || skippedItems.length > 0) {
+    recapHTML += `<div class="recap-section needs-work"><h3>🔴 Needs Improvement (${wrongItems.length + skippedItems.length} questions)</h3>`;
+    [...wrongItems, ...skippedItems].forEach(i => {
+      const q = questions[i];
+      const ua = userAnswers[i];
+      const status = ua === null ? 'ri-skip' : 'ri-wrong';
+      const yourAns = ua === null ? 'Not answered' : q.opts[ua];
+      recapHTML += `
+        <div class="recap-item ${status}">
+          <div class="ri-q">Q${i+1}. ${q.q}</div>
+          <div class="ri-your">Your answer: ${yourAns}</div>
+          <div class="ri-ans">✅ Correct answer: ${q.opts[q.ans]}</div>
+          <div class="ri-exp">💡 ${q.exp}</div>
+        </div>`;
+    });
+    recapHTML += `</div>`;
+  }
+
+  // Well done
+  if (correctItems.length > 0) {
+    recapHTML += `<div class="recap-section well-done"><h3>🟢 Correct Answers (${correctItems.length} questions)</h3>`;
+    correctItems.forEach(i => {
+      const q = questions[i];
+      recapHTML += `
+        <div class="recap-item ri-correct">
+          <div class="ri-q">Q${i+1}. ${q.q}</div>
+          <div class="ri-ans">✅ ${q.opts[q.ans]}</div>
+        </div>`;
+    });
+    recapHTML += `</div>`;
+  }
+
+  document.getElementById('quiz-container').classList.add('hide');
+  const recapEl = document.getElementById('recap');
+  recapEl.innerHTML = recapHTML;
+  recapEl.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────
+// Reset
+// ─────────────────────────────────────────────
+function resetQuiz() {
+  userAnswers.fill(null);
+  questions.forEach((q, i) => {
+    document.getElementById('card-' + i).className = 'question-card';
+    const fb = document.getElementById('fb-' + i);
+    fb.className = 'feedback';
+    fb.innerHTML = '';
+    q.opts.forEach((_, j) => {
+      const lbl = document.getElementById(`lbl-${i}-${j}`);
+      lbl.classList.remove('opt-correct', 'opt-wrong');
+      lbl.querySelector('input').checked = false;
+    });
+  });
+  document.getElementById('quiz-container').classList.remove('hide');
+  document.getElementById('recap').classList.remove('show');
+  document.getElementById('recap').innerHTML = '';
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateProgress();
+</script>
+</body>
+</html>

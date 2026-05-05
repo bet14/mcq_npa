@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INPA – MCQ Quiz</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #222; min-height: 100vh; }
+
+  /* ── Fixed top nav bar ── */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: #1a237e; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 56px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  #topbar .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
+  #topbar .nav-btns { display: flex; gap: 10px; }
+  #topbar button {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4);
+    color: #fff; padding: 6px 16px; border-radius: 20px; cursor: pointer;
+    font-size: 0.85rem; transition: background 0.2s;
+  }
+  #topbar button:hover { background: rgba(255,255,255,0.3); }
+  #topbar #progress-text { font-size: 0.85rem; opacity: 0.85; }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 76px 16px 40px; max-width: 860px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── Home page ── */
+  #home-page { text-align: center; padding-top: 100px; }
+  #home-page h1 { font-size: 2rem; color: #1a237e; margin-bottom: 8px; }
+  #home-page p { color: #555; margin-bottom: 32px; font-size: 1rem; }
+  .start-btn {
+    background: #1a237e; color: #fff; border: none;
+    padding: 14px 48px; border-radius: 30px; font-size: 1.1rem;
+    cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 14px rgba(26,35,126,0.3);
+  }
+  .start-btn:hover { background: #283593; }
+
+  /* ── Quiz page ── */
+  #quiz-page h2 { color: #1a237e; margin-bottom: 20px; font-size: 1.1rem; }
+
+  .question-card {
+    background: #fff; border-radius: 12px; padding: 22px 24px;
+    margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 5px solid #c5cae9;
+    transition: border-color 0.3s;
+  }
+  .question-card.answered-correct { border-left-color: #43a047; }
+  .question-card.answered-wrong   { border-left-color: #e53935; }
+
+  .q-header { display: flex; gap: 10px; margin-bottom: 14px; }
+  .q-num {
+    background: #1a237e; color: #fff; border-radius: 50%;
+    width: 28px; height: 28px; min-width: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700;
+  }
+  .q-text { font-size: 0.97rem; font-weight: 600; line-height: 1.5; }
+
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .option-btn {
+    background: #f5f7ff; border: 1.5px solid #c5cae9;
+    border-radius: 8px; padding: 10px 14px;
+    text-align: left; cursor: pointer; font-size: 0.9rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option-btn:hover:not(:disabled) { background: #e8eaf6; border-color: #7986cb; }
+  .option-btn.correct  { background: #e8f5e9; border-color: #43a047; color: #2e7d32; font-weight: 600; }
+  .option-btn.wrong    { background: #ffebee; border-color: #e53935; color: #c62828; }
+  .option-btn.reveal   { background: #e8f5e9; border-color: #43a047; color: #2e7d32; }
+  .option-btn:disabled { cursor: default; }
+
+  .feedback {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+    font-size: 0.88rem; line-height: 1.5; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+  .feedback.wrong-fb   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+
+  /* ── Submit bar ── */
+  #submit-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+    background: #fff; border-top: 1px solid #e0e0e0;
+    padding: 12px 24px; display: none;
+    align-items: center; justify-content: space-between;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  }
+  #submit-bar.show { display: flex; }
+  #submit-bar span { font-size: 0.9rem; color: #555; }
+  #submit-btn {
+    background: #e53935; color: #fff; border: none;
+    padding: 10px 32px; border-radius: 24px; font-size: 1rem;
+    cursor: pointer; transition: background 0.2s;
+  }
+  #submit-btn:hover { background: #c62828; }
+
+  /* ── Recap page ── */
+  #recap-page h2 { color: #1a237e; margin-bottom: 6px; }
+  .score-box {
+    background: #1a237e; color: #fff; border-radius: 14px;
+    padding: 28px; text-align: center; margin-bottom: 28px;
+    box-shadow: 0 4px 16px rgba(26,35,126,0.25);
+  }
+  .score-box .big-score { font-size: 3rem; font-weight: 800; }
+  .score-box .sub { font-size: 1rem; opacity: 0.8; margin-top: 4px; }
+  .score-box .grade { font-size: 1.3rem; font-weight: 700; margin-top: 10px; }
+
+  .stats-row { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1; min-width: 130px; background: #fff; border-radius: 10px;
+    padding: 16px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  }
+  .stat-card .val { font-size: 1.8rem; font-weight: 700; }
+  .stat-card .lbl { font-size: 0.8rem; color: #777; margin-top: 4px; }
+  .stat-card.green .val { color: #43a047; }
+  .stat-card.red .val   { color: #e53935; }
+  .stat-card.grey .val  { color: #757575; }
+
+  #recap-detail h3 { color: #1a237e; margin-bottom: 14px; font-size: 1rem; }
+  .recap-item {
+    background: #fff; border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 12px; box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+    border-left: 4px solid #ccc;
+  }
+  .recap-item.rc { border-left-color: #43a047; }
+  .recap-item.rw { border-left-color: #e53935; }
+  .recap-item.rs { border-left-color: #bdbdbd; }
+  .recap-item .ri-q { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+  .recap-item .ri-ans { font-size: 0.85rem; color: #555; }
+  .recap-item .ri-ans span { font-weight: 600; }
+  .recap-item .ri-ans .ok  { color: #43a047; }
+  .recap-item .ri-ans .bad { color: #e53935; }
+  .recap-item .ri-ans .sk  { color: #757575; }
+
+  .improve-box {
+    background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px;
+    padding: 16px; margin-bottom: 24px;
+  }
+  .improve-box h3 { color: #e65100; margin-bottom: 10px; font-size: 0.95rem; }
+  .improve-box ul { padding-left: 18px; font-size: 0.88rem; color: #555; line-height: 1.8; }
+
+  .retry-btn {
+    background: #1a237e; color: #fff; border: none;
+    padding: 12px 36px; border-radius: 24px; font-size: 1rem;
+    cursor: pointer; margin-top: 10px; transition: background 0.2s;
+  }
+  .retry-btn:hover { background: #283593; }
+
+  @media(max-width:600px) {
+    #topbar .brand { font-size: 0.85rem; }
+    .page { padding: 70px 10px 80px; }
+    .score-box .big-score { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Fixed top bar -->
+<div id="topbar">
+  <div class="brand">INPA – Network Protocols Quiz</div>
+  <div class="nav-btns">
+    <span id="progress-text"></span>
+    <button onclick="goHome()">🏠 Home</button>
+    <button onclick="goRecap()" id="recap-nav-btn" style="display:none">📊 Results</button>
+  </div>
+</div>
+
+<!-- HOME PAGE -->
+<div id="home-page" class="page">
+  <h1>INPA MCQ Quiz</h1>
+  <p>Introduction to Network Protocols and Architecture<br>
+     <strong>60 questions</strong> covering Lecture 1 topics</p>
+  <p style="color:#888;font-size:0.9rem;margin-bottom:30px">
+    ✅ Instant feedback on each answer &nbsp;|&nbsp;
+    📤 Submit anytime &nbsp;|&nbsp;
+    📊 Detailed recap at the end
+  </p>
+  <button class="start-btn" onclick="startQuiz()">Start Quiz</button>
+</div>
+
+<!-- QUIZ PAGE -->
+<div id="quiz-page" class="page active">
+  <h2 id="quiz-heading">Questions</h2>
+  <div id="questions-container"></div>
+  <div style="height:70px"></div>
+</div>
+
+<!-- RECAP PAGE -->
+<div id="recap-page" class="page">
+  <h2>📊 Quiz Results</h2>
+  <div class="score-box">
+    <div class="big-score" id="rc-score"></div>
+    <div class="sub" id="rc-sub"></div>
+    <div class="grade" id="rc-grade"></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card green"><div class="val" id="rc-correct"></div><div class="lbl">Correct</div></div>
+    <div class="stat-card red"><div class="val" id="rc-wrong"></div><div class="lbl">Wrong</div></div>
+    <div class="stat-card grey"><div class="val" id="rc-skip"></div><div class="lbl">Skipped</div></div>
+  </div>
+  <div class="improve-box" id="improve-box"></div>
+  <div id="recap-detail"></div>
+  <button class="retry-btn" onclick="retryQuiz()">🔄 Retry Quiz</button>
+</div>
+
+<!-- Fixed submit bar -->
+<div id="submit-bar">
+  <span id="answered-count">Answered: 0 / 60</span>
+  <button id="submit-btn" onclick="submitQuiz()">Submit &amp; See Results</button>
+</div>
+
+<script>
+const questions = [
+  {
+    q: `What does IPv4 stand for?`,
+    opts: ["Internet Protocol version 4","Internal Protocol version 4","Internet Package version 4","Integrated Protocol version 4"],
+    ans: 0,
+    exp: `IPv4 stands for Internet Protocol version 4. It is the fourth version of the Internet Protocol and uses 32-bit addresses.`
+  },
+  {
+    q: `How many bits does an IPv4 address contain?`,
+    opts: ["16 bits","32 bits","64 bits","128 bits"],
+    ans: 1,
+    exp: `An IPv4 address is 32 bits long, divided into 4 octets (bytes) of 8 bits each, written in dotted decimal notation.`
+  },
+  {
+    q: `How many octets does an IPv4 address consist of?`,
+    opts: ["2","3","4","8"],
+    ans: 2,
+    exp: `An IPv4 address consists of 4 octets (4 bytes), each 8 bits wide, e.g. 165.132.126.131.`
+  },
+  {
+    q: `What is the maximum decimal value that can be stored in a single IPv4 octet?`,
+    opts: ["128","254","255","256"],
+    ans: 2,
+    exp: `8 bits can represent values from 0 to 255 (2^8 - 1 = 255). This is the maximum value in any octet of an IPv4 address.`
+  },
+  {
+    q: `What is the binary representation of the decimal value 255?`,
+    opts: ["11111110","11111111","10000000","11110000"],
+    ans: 1,
+    exp: `255 in binary is 11111111 — all 8 bits set to 1. (128+64+32+16+8+4+2+1 = 255)`
+  },
+  {
+    q: `What does DHCP stand for?`,
+    opts: ["Dynamic Host Configuration Protocol","Dynamic Host Control Protocol","Direct Host Configuration Protocol","Distributed Host Control Protocol"],
+    ans: 0,
+    exp: `DHCP stands for Dynamic Host Configuration Protocol. It automatically assigns IP addresses and other network configuration parameters to devices.`
+  },
+  {
+    q: `What is the purpose of a Subnet Mask?`,
+    opts: ["To encrypt network traffic","To mask/filter the IP address to determine the subnet","To assign MAC addresses","To route packets between different networks"],
+    ans: 1,
+    exp: `A Subnet Mask is used to mask (filter) the IP address in IP packets to determine the respective subnet a device belongs to.`
+  },
+  {
+    q: `What is the Default Gateway?`,
+    opts: ["The DNS server of the network","The dedicated Internet Router that sends/receives all Internet IP packets for a device","The primary switch in a LAN","The firewall protecting the network"],
+    ans: 1,
+    exp: `The Default Gateway is the dedicated Internet Router through which a device sends and receives all Internet IP packets.`
+  },
+  {
+    q: `What does DNS stand for?`,
+    opts: ["Domain Name System","Dynamic Name Server","Domain Network Service","Direct Name System"],
+    ans: 0,
+    exp: `DNS stands for Domain Name System (or Domain Name Server). It converts hostnames (like www.epita.fr) into IP addresses.`
+  },
+  {
+    q: `What is the primary function of a DNS server?`,
+    opts: ["Assign IP addresses automatically","Convert hostnames into IP addresses","Encrypt web traffic","Manage firewall rules"],
+    ans: 1,
+    exp: `A DNS server converts hostnames (e.g., www.epita.fr) into IP addresses so that devices can locate each other on the internet.`
+  },
+  {
+    q: `In the TCP/IP model, how many layers are there?`,
+    opts: ["4","5","6","7"],
+    ans: 1,
+    exp: `The TCP/IP model has 5 layers: Physical, Network Access, Internet, Transport, and Application.`
+  },
+  {
+    q: `How many layers does the OSI model have?`,
+    opts: ["4","5","6","7"],
+    ans: 3,
+    exp: `The OSI (Open System Interconnection) model has 7 layers: Physical, Data Link, Network, Transport, Session, Presentation, and Application.`
+  },
+  {
+    q: `Which layer of the TCP/IP model is responsible for IP addressing?`,
+    opts: ["Transport layer","Application layer","Internet layer","Network access layer"],
+    ans: 2,
+    exp: `The Internet layer (Layer 3) handles IP addressing. It uses IP packets with source and destination IP addresses.`
+  },
+  {
+    q: `Which Protocol Data Unit (PDU) is used at the Transport layer?`,
+    opts: ["Bits","Frames","Packets","Segments (TCP) / Datagrams (UDP)"],
+    ans: 3,
+    exp: `At the Transport layer, TCP uses Segments and UDP uses Datagrams as the Protocol Data Unit (PDU).`
+  },
+  {
+    q: `What type of address is used at the Network Access (Data Link) layer?`,
+    opts: ["IP address","Port address","MAC address","Domain name"],
+    ans: 2,
+    exp: `The Network Access (Data Link) layer uses MAC (Media Access Control) addresses to identify source and destination devices on the same local network.`
+  },
+  {
+    q: `What does OSI stand for?`,
+    opts: ["Open System Interconnection","Open Source Internet","Operational System Interface","Organized System Infrastructure"],
+    ans: 0,
+    exp: `OSI stands for Open System Interconnection. It is a conceptual framework (ITU-T standard X.200 / ISO/IEC 7498-1) used to understand how different network protocols interact.`
+  },
+  {
+    q: `Which organization currently maintains the TCP/IP (DoD) model?`,
+    opts: ["IEEE","ISO","IETF","ITU-T"],
+    ans: 2,
+    exp: `The TCP/IP model (DoD Model) is currently maintained by the IETF (Internet Engineering Task Force).`
+  },
+  {
+    q: `What does LAN stand for?`,
+    opts: ["Large Area Network","Local Area Network","Linked Access Node","Long Access Network"],
+    ans: 1,
+    exp: `LAN stands for Local Area Network. It connects devices in close proximity (0–2 km), such as a home network or office building network.`
+  },
+  {
+    q: `What is the typical range of a MAN (Metropolitan Area Network)?`,
+    opts: ["0–2 km","2–50 km","50–200 km","200+ km"],
+    ans: 1,
+    exp: `A MAN (Metropolitan Area Network) typically spans 2–50 km, covering a city or large campus using copper wires or high-speed fiber optics.`
+  },
+  {
+    q: `What does WAN stand for?`,
+    opts: ["Wireless Access Node","Wide Area Network","Web Application Network","Wired Area Node"],
+    ans: 1,
+    exp: `WAN stands for Wide Area Network. It spans over 50 km and is made up of multiple MANs, using satellites, fiber optics, and copper wires.`
+  },
+  {
+    q: `What does VPN stand for?`,
+    opts: ["Virtual Private Network","Virtual Public Network","Verified Protocol Node","Variable Packet Network"],
+    ans: 0,
+    exp: `VPN stands for Virtual Private Network. It creates private networks containing clients from different locations under a virtual network.`
+  },
+  {
+    q: `Which network topology provides the highest fault tolerance?`,
+    opts: ["Bus","Ring","Star","Mesh"],
+    ans: 3,
+    exp: `Mesh topology provides the highest fault tolerance because every device is connected to every other device, providing multiple redundant paths.`
+  },
+  {
+    q: `In a Client/Server architecture, how is control distributed?`,
+    opts: ["Decentralized","Distributed","Centralized","Peer-based"],
+    ans: 2,
+    exp: `Client/Server architecture is centralized — a central server provides resources and services to multiple clients.`
+  },
+  {
+    q: `What type of architecture does Peer-to-Peer (P2P) represent?`,
+    opts: ["Centralized","Decentralized","Hierarchical","Mainframe-based"],
+    ans: 1,
+    exp: `Peer-to-Peer (P2P) architecture is decentralized — each peer can act as both client and server, sharing resources directly with other peers.`
+  },
+  {
+    q: `What does TCP stand for?`,
+    opts: ["Transfer Control Protocol","Transmission Control Protocol","Transport Communication Protocol","Terminal Control Protocol"],
+    ans: 1,
+    exp: `TCP stands for Transmission Control Protocol. It is a connection-oriented, reliable transport layer protocol.`
+  },
+  {
+    q: `What does UDP stand for?`,
+    opts: ["Universal Datagram Protocol","User Datagram Protocol","Unified Data Protocol","Unrestricted Data Protocol"],
+    ans: 1,
+    exp: `UDP stands for User Datagram Protocol. It is a connectionless, unreliable transport layer protocol used when speed is prioritized over reliability.`
+  },
+  {
+    q: `Which of the following is a connection-oriented service?`,
+    opts: ["UDP","DNS","TCP","TFTP"],
+    ans: 2,
+    exp: `TCP is connection-oriented — it establishes a connection (path setup) before data is sent, ensuring reliable delivery.`
+  },
+  {
+    q: `Which communication mode allows data to flow in both directions simultaneously?`,
+    opts: ["Simplex","Half-duplex","Full-duplex","Broadcast"],
+    ans: 2,
+    exp: `Full-duplex mode allows data to flow in both directions at the same time (e.g., a telephone call).`
+  },
+  {
+    q: `A walkie-talkie is an example of which communication mode?`,
+    opts: ["Simplex","Half-duplex","Full-duplex","Multicast"],
+    ans: 1,
+    exp: `A walkie-talkie uses half-duplex mode — communication can go in either direction, but only one way at a time.`
+  },
+  {
+    q: `A loudspeaker is an example of which communication mode?`,
+    opts: ["Simplex","Half-duplex","Full-duplex","Duplex"],
+    ans: 0,
+    exp: `A loudspeaker uses simplex mode — data (sound) flows in only one direction (from the source to the listener).`
+  },
+  {
+    q: `What is encapsulation in the context of TCP/IP data transfer?`,
+    opts: ["Encrypting data for security","Adding headers at each layer as data moves down the stack","Removing headers as data moves up the stack","Compressing data to reduce size"],
+    ans: 1,
+    exp: `Encapsulation is the process of adding protocol headers (and sometimes trailers) at each layer as data moves down the TCP/IP stack from Application to Physical.`
+  },
+  {
+    q: `What is decapsulation?`,
+    opts: ["Adding headers at each layer","Removing headers at each layer as data moves up the stack","Encrypting data","Fragmenting packets"],
+    ans: 1,
+    exp: `Decapsulation is the reverse of encapsulation — headers are removed at each layer as data moves up the TCP/IP stack at the receiving end.`
+  },
+  {
+    q: `Which layer of the TCP/IP model does HTTP belong to?`,
+    opts: ["Transport layer","Internet layer","Network access layer","Application layer"],
+    ans: 3,
+    exp: `HTTP (HyperText Transfer Protocol) is an Application layer protocol (Layer 5 in the TCP/IP 5-layer model).`
+  },
+  {
+    q: `Which layer does Ethernet belong to in the TCP/IP model?`,
+    opts: ["Application layer","Transport layer","Internet layer","Network access layer"],
+    ans: 3,
+    exp: `Ethernet belongs to the Network Access layer (Layer 2) of the TCP/IP model, which corresponds to the Data Link layer in the OSI model.`
+  },
+  {
+    q: `What does NAT stand for?`,
+    opts: ["Network Address Translation","Node Access Table","Network Allocation Table","Node Address Transfer"],
+    ans: 0,
+    exp: `NAT stands for Network Address Translation. It hides internal IP addresses from outside networks, providing a layer of security.`
+  },
+  {
+    q: `What is the maximum download speed of dial-up internet?`,
+    opts: ["1 Mbps","128 Kbps","56 Kbps","10 Mbps"],
+    ans: 2,
+    exp: `Dial-up internet has a maximum speed of 56 Kbps. It requires a phone line and ISP, and must dial to connect.`
+  },
+  {
+    q: `Which internet connection type uses Low Earth Orbit satellites?`,
+    opts: ["DSL","Cable","Cellular","Satellite (e.g., Starlink)"],
+    ans: 3,
+    exp: `Satellite internet (e.g., Starlink) uses Low Earth Orbit (LEO) satellites, offering speeds of 25–220 Mbps download.`
+  },
+  {
+    q: `What does DSL stand for?`,
+    opts: ["Direct Service Line","Digital Subscriber Line","Data Streaming Layer","Distributed Signal Link"],
+    ans: 1,
+    exp: `DSL stands for Digital Subscriber Line. It uses existing telephone lines to provide broadband internet access.`
+  },
+  {
+    q: `In the layered network architecture, which principle describes service usage between layers?`,
+    opts: ["Layer N uses services of layer N+1","Layer N uses services of layer N-1","Layer N uses services of all layers","Layers are independent of each other"],
+    ans: 1,
+    exp: `In layered architecture, an entity of layer N uses only the services of layer N-1, and provides services only to layer N+1.`
+  },
+  {
+    q: `What does ARP stand for?`,
+    opts: ["Address Resolution Protocol","Automatic Routing Protocol","Application Request Protocol","Advanced Relay Protocol"],
+    ans: 0,
+    exp: `ARP stands for Address Resolution Protocol. It maps IP addresses to MAC addresses within a local network.`
+  },
+  {
+    q: `Which protocol is used for reliable, connection-oriented data transfer?`,
+    opts: ["UDP","ICMP","TCP","ARP"],
+    ans: 2,
+    exp: `TCP (Transmission Control Protocol) provides reliable, connection-oriented data transfer with error checking and acknowledgement.`
+  },
+  {
+    q: `What does ICMP stand for?`,
+    opts: ["Internet Control Message Protocol","Internal Communication Management Protocol","Internet Connection Monitoring Protocol","Integrated Control Message Protocol"],
+    ans: 0,
+    exp: `ICMP stands for Internet Control Message Protocol. It is used for error reporting and diagnostic functions (e.g., the ping command).`
+  },
+  {
+    q: `What does FTP stand for?`,
+    opts: ["File Transfer Protocol","Fast Transfer Protocol","File Transmission Process","Forwarding Transfer Protocol"],
+    ans: 0,
+    exp: `FTP stands for File Transfer Protocol. It is an Application layer protocol used to transfer files between a client and server.`
+  },
+  {
+    q: `What does SMTP stand for?`,
+    opts: ["Simple Mail Transfer Protocol","Secure Message Transfer Protocol","Standard Mail Transmission Protocol","Simple Message Tracking Protocol"],
+    ans: 0,
+    exp: `SMTP stands for Simple Mail Transfer Protocol. It is used for sending emails between servers.`
+  },
+  {
+    q: `What does SNMP stand for?`,
+    opts: ["Simple Network Management Protocol","Secure Node Management Protocol","Standard Network Monitoring Protocol","Simple Node Messaging Protocol"],
+    ans: 0,
+    exp: `SNMP stands for Simple Network Management Protocol. It is used for managing and monitoring network devices.`
+  },
+  {
+    q: `Which of the following is an example of a connectionless service?`,
+    opts: ["FTP","TCP","UDP","Telephone system"],
+    ans: 2,
+    exp: `UDP is connectionless — it sends datagrams without establishing a connection first, similar to the postal system.`
+  },
+  {
+    q: `What is the Cisco IOS?`,
+    opts: ["A network simulation software","An Internetwork Operating System used to configure Cisco routers and switches","A type of firewall","A cloud-based network management platform"],
+    ans: 1,
+    exp: `Cisco IOS (Internetwork Operating System) is a Network Operating System (NOS) used to configure, monitor, and troubleshoot Cisco routers and switches.`
+  },
+  {
+    q: `What mode in Cisco IOS is read-only and shown as 'hostname>'?`,
+    opts: ["Privilege mode","Configuration mode","Single (User EXEC) mode","Special configuration mode"],
+    ans: 2,
+    exp: `Single mode (User EXEC mode), indicated by 'hostname>', is read-only. It allows basic monitoring commands but no configuration changes.`
+  },
+  {
+    q: `What does the prompt 'hostname#' indicate in Cisco IOS?`,
+    opts: ["User EXEC mode (read-only)","Privilege mode (read/write)","Global configuration mode","Interface configuration mode"],
+    ans: 1,
+    exp: `The prompt 'hostname#' indicates Privilege mode (Privileged EXEC mode), which allows both read and write operations.`
+  },
+  {
+    q: `What does BGP stand for?`,
+    opts: ["Border Gateway Protocol","Basic Gateway Protocol","Broadcast Gateway Protocol","Bridge Group Protocol"],
+    ans: 0,
+    exp: `BGP stands for Border Gateway Protocol. It is an Exterior Gateway Protocol (EGP) used to exchange routing information between different autonomous systems on the internet.`
+  },
+  {
+    q: `What does OSPF stand for?`,
+    opts: ["Open Shortest Path First","Optimized Shortest Path Forwarding","Open System Path Finder","Operational Shortest Path Framework"],
+    ans: 0,
+    exp: `OSPF stands for Open Shortest Path First. It is a link-state Interior Gateway Protocol (IGP) used for routing within an autonomous system.`
+  },
+  {
+    q: `What does RIP stand for?`,
+    opts: ["Routing Information Protocol","Remote Internet Protocol","Relay Information Process","Routing Interface Protocol"],
+    ans: 0,
+    exp: `RIP stands for Routing Information Protocol. It is a distance-vector Interior Gateway Protocol (IGP) that uses hop count as its routing metric.`
+  },
+  {
+    q: `What does ACL stand for in networking?`,
+    opts: ["Access Control List","Automatic Configuration Layer","Application Control Logic","Address Configuration Link"],
+    ans: 0,
+    exp: `ACL stands for Access Control List. It is a set of rules used to filter network traffic based on IP addresses, protocols, or ports.`
+  },
+  {
+    q: `What does PGP stand for?`,
+    opts: ["Pretty Good Privacy","Public Gateway Protocol","Packet Generation Process","Private Group Protocol"],
+    ans: 0,
+    exp: `PGP stands for Pretty Good Privacy. It is an encryption program used for securing email communications (covered in Lecture 7 with SMTP).`
+  },
+  {
+    q: `In the data transfer example, a 7KB file is divided into what?`,
+    opts: ["Bits","Frames","Chunks/Segments","Packets only"],
+    ans: 2,
+    exp: `In the data transfer example, a ~7KB file is divided into 'chunks' (segments), each wrapped with TCP, IP, and Ethernet headers before transmission.`
+  },
+  {
+    q: `What does IEEE 802.11 refer to?`,
+    opts: ["Bluetooth standards","Wi-Fi (Wireless LAN) standards","Ethernet cable standards","Cellular network standards"],
+    ans: 1,
+    exp: `IEEE 802.11 refers to Wi-Fi (Wireless LAN) standards, including variants like 802.11a/b/g/n/ac operating at 2.4 GHz and 5 GHz frequencies.`
+  },
+  {
+    q: `What does ONT stand for in fiber internet connections?`,
+    opts: ["Open Network Terminal","Optical Network Termination","Organized Node Transfer","Optical Node Technology"],
+    ans: 1,
+    exp: `ONT stands for Fiber Network Termination (Optical Network Termination). It is the device that terminates the fiber optic cable at the customer's premises.`
+  },
+  {
+    q: `What is the typical download speed range for 5G cellular networks?`,
+    opts: ["1–10 Mbps","10–100 Mbps","100 Mbps to 1+ Gbps","25–220 Mbps"],
+    ans: 2,
+    exp: `5G (New Radio) offers download speeds of 100 Mbps to 1+ Gbps, significantly faster than 4G LTE (10–100 Mbps).`
+  },
+  {
+    q: `Which of the following is NOT an Application layer protocol?`,
+    opts: ["HTTP","FTP","SMTP","IP"],
+    ans: 3,
+    exp: `IP (Internet Protocol) is an Internet layer (Layer 3) protocol, not an Application layer protocol. HTTP, FTP, and SMTP are all Application layer protocols.`
+  },
+  {
+    q: `What grading percentage is assigned to class assignments (practical work) in INPA?`,
+    opts: ["10%","30%","40%","50%"],
+    ans: 2,
+    exp: `According to the INPA grading criteria: Class attendance = 10%, Class assignments (practical work) = 40%, Final evaluation (Quiz & Exam) = 50%.`
+  },
+  {
+    q: `What does the subnet mask 255.255.252.0 indicate about subnet size?`,
+    opts: ["256 IP addresses","512 IP addresses","1024 IP addresses","2048 IP addresses"],
+    ans: 2,
+    exp: `The subnet mask 255.255.252.0 = 11111111.11111111.11111100.00000000 has 10 host bits (zeros), meaning 2^10 = 1,024 IP addresses on the subnet.`
+  },
+  {
+    q: `Which access method in Cisco IOS uses Telnet or SSH?`,
+    opts: ["Console port","Auxiliary port","VTY (virtual TTY)","WEB interface"],
+    ans: 2,
+    exp: `VTY (Virtual TTY) provides remote access to Cisco IOS using Telnet or SSH protocols.`
+  }
+];
+
+// ── State ──
+let userAnswers = new Array(questions.length).fill(null);
+let submitted = false;
+
+// ── Navigation ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { showPage('home-page'); updateSubmitBar(); }
+
+function goRecap() {
+  buildRecap();
+  showPage('recap-page');
+  document.getElementById('submit-bar').classList.remove('show');
+}
+
+// ── Start ──
+function startQuiz() {
+  userAnswers = new Array(questions.length).fill(null);
+  submitted = false;
+  buildQuestions();
+  showPage('quiz-page');
+  document.getElementById('recap-nav-btn').style.display = 'none';
+  document.getElementById('submit-bar').classList.add('show');
+  updateSubmitBar();
+  window.scrollTo(0,0);
+}
+
+function retryQuiz() { startQuiz(); }
+
+// ── Build questions ──
+function buildQuestions() {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  questions.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `card-${i}`;
+
+    const optsHTML = q.opts.map((o, j) =>
+      `<button class="option-btn" id="opt-${i}-${j}" onclick="selectAnswer(${i},${j})">${String.fromCharCode(65+j)}. ${o}</button>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="q-header">
+        <div class="q-num">${i+1}</div>
+        <div class="q-text">${q.q}</div>
+      </div>
+      <div class="options">${optsHTML}</div>
+      <div class="feedback" id="fb-${i}"></div>`;
+    container.appendChild(card);
+  });
+  document.getElementById('quiz-heading').textContent = `Questions (${questions.length} total)`;
+}
+
+// ── Select answer ──
+function selectAnswer(qIdx, optIdx) {
+  if (submitted) return;
+  if (userAnswers[qIdx] !== null) return; // already answered
+
+  userAnswers[qIdx] = optIdx;
+  const correct = questions[qIdx].ans;
+  const isCorrect = optIdx === correct;
+
+  // Style buttons
+  for (let j = 0; j < questions[qIdx].opts.length; j++) {
+    const btn = document.getElementById(`opt-${qIdx}-${j}`);
+    btn.disabled = true;
+    if (j === correct) btn.classList.add(isCorrect ? 'correct' : 'reveal');
+    if (j === optIdx && !isCorrect) btn.classList.add('wrong');
+  }
+
+  // Card border
+  const card = document.getElementById(`card-${qIdx}`);
+  card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
+
+  // Feedback
+  const fb = document.getElementById(`fb-${qIdx}`);
+  fb.textContent = (isCorrect ? '✅ Correct! ' : '❌ Incorrect. ') + questions[qIdx].exp;
+  fb.className = `feedback show ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+
+  updateSubmitBar();
+  updateProgress();
+}
+
+// ── Submit ──
+function submitQuiz() {
+  submitted = true;
+  // Disable all remaining unanswered
+  questions.forEach((q, i) => {
+    if (userAnswers[i] === null) {
+      for (let j = 0; j < q.opts.length; j++) {
+        document.getElementById(`opt-${i}-${j}`).disabled = true;
+      }
+    }
+  });
+  document.getElementById('recap-nav-btn').style.display = 'inline-block';
+  goRecap();
+}
+
+// ── Update submit bar ──
+function updateSubmitBar() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  document.getElementById('answered-count').textContent = `Answered: ${answered} / ${questions.length}`;
+}
+
+function updateProgress() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  document.getElementById('progress-text').textContent = `${answered}/${questions.length}`;
+}
+
+// ── Build recap ──
+function buildRecap() {
+  const total = questions.length;
+  let correct = 0, wrong = 0, skip = 0;
+  const wrongTopics = [];
+
+  userAnswers.forEach((ans, i) => {
+    if (ans === null) { skip++; }
+    else if (ans === questions[i].ans) { correct++; }
+    else { wrong++; wrongTopics.push(i); }
+  });
+
+  const pct = Math.round((correct / total) * 100);
+  let grade = '';
+  if (pct >= 90) grade = '🏆 Excellent!';
+  else if (pct >= 75) grade = '👍 Good job!';
+  else if (pct >= 60) grade = '📚 Keep studying!';
+  else grade = '💪 More practice needed!';
+
+  document.getElementById('rc-score').textContent = `${pct}%`;
+  document.getElementById('rc-sub').textContent = `${correct} correct out of ${total} questions`;
+  document.getElementById('rc-grade').textContent = grade;
+  document.getElementById('rc-correct').textContent = correct;
+  document.getElementById('rc-wrong').textContent = wrong;
+  document.getElementById('rc-skip').textContent = skip;
+
+  // Improve box
+  const ib = document.getElementById('improve-box');
+  if (wrongTopics.length === 0 && skip === 0) {
+    ib.innerHTML = '<h3>🎉 Perfect Score!</h3><p>You answered all questions correctly. Outstanding work!</p>';
+  } else {
+    let items = '';
+    wrongTopics.slice(0, 8).forEach(i => {
+      items += `<li>Q${i+1}: ${questions[i].q.substring(0,70)}${questions[i].q.length>70?'...':''}</li>`;
+    });
+    if (skip > 0) items += `<li>${skip} question(s) were skipped — review them!</li>`;
+    ib.innerHTML = `<h3>⚠️ Areas to Improve (${wrongTopics.length + skip} items)</h3><ul>${items}</ul>`;
+  }
+
+  // Detail
+  const detail = document.getElementById('recap-detail');
+  let html = '<div id="recap-detail"><h3>📋 Detailed Review</h3>';
+  questions.forEach((q, i) => {
+    const ans = userAnswers[i];
+    let cls = 'rs', statusHTML = '';
+    if (ans === null) {
+      cls = 'rs';
+      statusHTML = `<span class="sk">⬜ Skipped</span> — Correct answer: <span class="ok">${String.fromCharCode(65+q.ans)}. ${q.opts[q.ans]}</span>`;
+    } else if (ans === q.ans) {
+      cls = 'rc';
+      statusHTML = `<span class="ok">✅ Correct</span> — ${String.fromCharCode(65+ans)}. ${q.opts[ans]}`;
+    } else {
+      cls = 'rw';
+      statusHTML = `<span class="bad">❌ Your answer:</span> ${String.fromCharCode(65+ans)}. ${q.opts[ans]} &nbsp;|&nbsp; <span class="ok">✅ Correct:</span> ${String.fromCharCode(65+q.ans)}. ${q.opts[q.ans]}`;
+    }
+    html += `
+      <div class="recap-item ${cls}">
+        <div class="ri-q">Q${i+1}. ${q.q}</div>
+        <div class="ri-ans">${statusHTML}</div>
+        <div class="ri-ans" style="margin-top:5px;color:#555;font-size:0.82rem">💡 ${q.exp}</div>
+      </div>`;
+  });
+  html += '</div>';
+  detail.innerHTML = html;
+}
+
+// Init progress
+updateProgress();
+window.onload = function() {
+    buildQuestions();
+    document.getElementById('submit-bar').classList.add('show');
+    updateSubmitBar();
+};
+</script>
+</body>
+</html>
